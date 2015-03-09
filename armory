@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+# coding=utf-8
+
+__author__ = 'kra869'
+
+import commands.init as cmd_init
+import commands.status as cmd_status
+import commands.show as cmd_show
+import context
+
+
+context = context.Context()
+
+# Initialize commands
+cmd_init.init(context)
+cmd_status.init(context)
+cmd_show.init(context)
+
+# Execute based on command-line arguments
+context.execute()
+
+
