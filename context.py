@@ -3,6 +3,7 @@ __author__ = 'kra869'
 import argparse
 import os
 import os.path
+import glob
 import ConfigParser
 
 
@@ -43,15 +44,17 @@ class ReadWriteRepositoryDirectory(argparse.Action):
 
 class Context:
     def __init__(self):
-        current_dir = os.getcwd()
-
         self.modules = Modules()
+        self.home_directory = os.getcwd()
 
-        self.home_directory = current_dir
+        self.env = {
+            'ARMORY_ENV': 'dev',
+            'ARMORY_VERSION': '1.0.0'
+        }
 
         self.args_parser = argparse.ArgumentParser(prog='Armory')
         self.args_parser.add_argument('--debug', action='store_true', help='Enable debugging (mainly)')
-        self.args_parser.add_argument('--directory', metavar='FILE', action=ReadWriteRepositoryDirectory, default=current_dir)
+        self.args_parser.add_argument('--directory', metavar='FILE', action=ReadWriteRepositoryDirectory, default=self.home_directory)
         self.sub_args_parsers = self.args_parser.add_subparsers(title='Armory commands', description='The commands available with Armory', help='Available Armory commmands')
 
     def register_command(self, cmd, command, **kwargs):
@@ -66,7 +69,18 @@ class Context:
     def execute(self):
         args = self.args_parser.parse_args()
 
-        self.home_directory = args.directory;
+        self.home_directory = args.directory
+
+        config = ConfigParser.SafeConfigParser()
+        config.read(glob.glob(self.home_directory + '/*.armory'))
+
+        for (key, value) in config.items('environment'):
+            if key == 'env' or key == 'environment':
+                self.env['ARMORY_ENV'] = value
+            else:
+                self.env['ARMORY_' + key.upper()] = value
+
+        self.env['ARMORY_HOME'] = args.directory
 
         args.command(args, self)
 
@@ -74,6 +88,15 @@ class Context:
 
     def check_directories(self):
         pass
+
+    def get_module_directory(self, module_name):
+        return self.home_directory + '/modules.d/' + module_name + '/'
+
+    def get_modules_directory(self):
+        return self.home_directory + '/modules.d/'
+
+    def get_config_directory(self, module_name, env_name):
+        return self.home_directory + '/conf.d/' + module_name + '/' + env_name + '/'
 
 
 class Module:
@@ -117,12 +140,12 @@ class Modules:
         pass
 
 
-    def get(self, module_directory):
-        return Module(module_directory);
+    def get(self, context, module_name):
+        return Module(context.get_module_directory(module_name))
 
-    def from_director(self, directory):
+    def from_context(self, context):
         modules = {}
-        for subdirectory in os.listdir(directory + '/modules.d/'):
-            modules[subdirectory] = self.get(directory + '/modules.d/' + subdirectory)
+        for subdirectory in os.listdir(context.get_modules_directory()):
+            modules[subdirectory] = self.get(context, subdirectory)
 
         return modules

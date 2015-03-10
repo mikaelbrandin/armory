@@ -11,7 +11,9 @@ def init(context):
 
 
 def command_start(args, context):
-    modules = context.modules.from_director(args.directory)
+    modules = context.modules.from_context(context)
+
+    context.check_directories()
 
     if len(args.services) == 1 and args.services[0] == 'all':
         args.services = modules.keys()
@@ -25,9 +27,9 @@ def command_start(args, context):
 def start(args, context, module):
     env = os.environ.copy()
 
-    context.check_directories()
+    env.update(context.env)
 
-    env['ARMORY_HOME'] = args.directory
-    env['ARMORY_RUN_DIRECTORY'] = args.directory + '/.armory/run/'
+    env['ARMORY_MODULE_DIRECTORY'] = context.get_module_directory(module.name)
+    env['ARMORY_MODULE_CONF_DIRECTORY'] = context.get_config_directory(module.name, env['ARMORY_ENV'])
 
-    subprocess.Popen(args.directory + '/modules.d/' + module.name + '/start', env=env)
+    subprocess.Popen(module.module_directory + '/start', env=env)
