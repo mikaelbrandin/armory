@@ -47,6 +47,8 @@ class Context:
 
         self.modules = Modules()
 
+        self.home_directory = current_dir
+
         self.args_parser = argparse.ArgumentParser(prog='Armory')
         self.args_parser.add_argument('--debug', action='store_true', help='Enable debugging (mainly)')
         self.args_parser.add_argument('--directory', metavar='FILE', action=ReadWriteRepositoryDirectory, default=current_dir)
@@ -63,9 +65,15 @@ class Context:
 
     def execute(self):
         args = self.args_parser.parse_args()
+
+        self.home_directory = args.directory;
+
         args.command(args, self)
 
         return None
+
+    def check_directories(self):
+        pass
 
 
 class Module:
@@ -77,18 +85,29 @@ class Module:
         self.name = os.path.basename(module_directory)
         self.module_info_file = self.module_directory + '/' + self.name + '.info'
         self.version = '~'
+        self.description = ''
+        self.short_description = ''
+        self.config = ConfigParser.SafeConfigParser()
         self.sync()
 
     def sync(self):
         if not os.path.exists(self.module_info_file):
             return False
 
-        self.config = ConfigParser.SafeConfigParser()
+        MAX_SHORT_DESC_LENGHT = 50
+
         self.config.read(self.module_info_file)
 
         self.version = self.config.get('general', 'version')
         if self.config.has_option('general', 'name'):
             self.name = self.config.get('general', 'name')
+
+        if self.config.has_option('general', 'description'):
+            self.description = self.config.get('general', 'description')
+            self.short_description = self.description.strip().replace('\n', ' ')
+            self.short_description = self.short_description.replace('\t', ' ')
+            if len(self.short_description) > MAX_SHORT_DESC_LENGHT:
+                self.short_description = self.short_description[0:MAX_SHORT_DESC_LENGHT - 3] + '...'
 
         return True
 
@@ -100,3 +119,10 @@ class Modules:
 
     def get(self, module_directory):
         return Module(module_directory);
+
+    def from_director(self, directory):
+        modules = {}
+        for subdirectory in os.listdir(directory + '/modules.d/'):
+            modules[subdirectory] = self.get(directory + '/modules.d/' + subdirectory)
+
+        return modules

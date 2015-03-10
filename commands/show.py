@@ -1,8 +1,5 @@
 __author__ = 'kra869'
 
-import os
-import os.path
-
 available_sections = ['modules', 'mods', 'configuration', 'config']
 
 
@@ -24,15 +21,12 @@ def command_show(args, context):
 
 
 def command_show_mods(args, context):
-    modules = {}
+    modules = context.modules.from_director(args.directory)
 
-    for subdirectory in os.listdir(args.directory + '/modules.d/'):
-        modules[subdirectory] = context.modules.get(args.directory + '/modules.d/' + subdirectory)
-
-    print "{status:6} {name:50} {version:50}".format(name="Name", version="Version", status="Status")
+    print "{status:6} {name:30} {version:20} {description:50}".format(name="Name", version="Version", status="Status", description="Description")
 
     for name, module in modules.iteritems():
-        print "[{status:^4}] {name:50} {version:50}".format(name=name, version=module.version, status="ok")
+        print "[{status:^4}] {name:30} {version:20} {description:50}".format(name=name, version=module.version, status="ok", description=module.short_description)
 
     return None
 

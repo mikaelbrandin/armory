@@ -6,6 +6,7 @@ __author__ = 'kra869'
 import commands.init as cmd_init
 import commands.status as cmd_status
 import commands.show as cmd_show
+import commands.start as cmd_start
 import context
 
 
@@ -15,6 +16,7 @@ context = context.Context()
 cmd_init.init(context)
 cmd_status.init(context)
 cmd_show.init(context)
+cmd_start.init(context)
 
 # Execute based on command-line arguments
 context.execute()
