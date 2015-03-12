@@ -6,6 +6,8 @@ import os.path
 import glob
 import ConfigParser
 
+import utils
+
 
 class ReadWriteDirectory(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -23,32 +25,52 @@ class ReadWriteDirectory(argparse.Action):
             raise argparse.ArgumentError(self, "writable_dir:{0} is not a writable directory".format(prospective_dir))
 
 
+def is_armory_repository_dir(dir):
+    if not dir.endswith(os.sep):
+        dir += os.sep
+
+    if not os.path.isdir(dir):
+        return False
+    elif not os.access(dir, os.R_OK):
+        return False
+    elif not os.path.exists(dir + '.armory'):
+        return False
+    elif not os.access(dir, os.W_OK):
+        return False
+
+    return True
+
+
 class ReadWriteRepositoryDirectory(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         prospective_dir = values
 
-        if not os.path.isdir(prospective_dir):
-            raise argparse.ArgumentError(self, "ReadWriteRepositoryDirectory:{0} is not a valid path".format(prospective_dir))
+        if not prospective_dir.endswith(os.sep):
+            prospective_dir += os.sep
 
-        if not os.access(prospective_dir, os.R_OK):
-            raise argparse.ArgumentError(self, "ReadWriteRepositoryDirectory:{0} is not a readable directory".format(prospective_dir))
-
-        if not os.path.exists(prospective_dir + os.path.sep + '.armory'):
-            raise argparse.ArgumentError(self, "ReadWriteRepositoryDirectory:{0} is not a Armory".format(prospective_dir))
-
-        if os.access(prospective_dir, os.W_OK):
+        if is_armory_repository_dir(prospective_dir):
             setattr(namespace, self.dest, prospective_dir)
         else:
-            raise argparse.ArgumentError(self, "ReadWriteRepositoryDirectory:{0} is not a writable directory".format(prospective_dir))
+            raise argparse.ArgumentError(self, "ReadWriteRepositoryDirectory:{0} is not a armoery directory directory".format(prospective_dir))
 
 
 class Context:
     def __init__(self):
         self.modules = Modules()
-        self.home_directory = os.getcwd()
 
+        self.home_directory = os.getcwd() + os.sep
+
+        if not is_armory_repository_dir(self.home_directory) and 'ARMORY_HOME' in os.environ and os.path.exists(os.environ.get('ARMORY_HOME')) and os.path.isdir(
+                os.environ.get('ARMORY_HOME')):
+            self.home_directory = os.environ.get('ARMORY_HOME')
+            if not self.home_directory.endswith(os.sep):
+                self.home_directory += os.sep
+
+        self.db_directory = self.home_directory + '.armory' + os.sep
+        self.config = ConfigParser.SafeConfigParser()
+        self.environment = 'dev'
         self.env = {
-            'ARMORY_ENV': 'dev',
+            'ARMORY_ENV': self.environment,
             'ARMORY_VERSION': '1.0.0'
         }
 
@@ -70,11 +92,11 @@ class Context:
         args = self.args_parser.parse_args()
 
         self.home_directory = args.directory
+        self.db_directory = args.directory + '.armory' + os.sep
 
-        config = ConfigParser.SafeConfigParser()
-        config.read(glob.glob(self.home_directory + '/*.armory'))
+        self.config.read(glob.glob(self.home_directory + '*.armory'))
 
-        for (key, value) in config.items('environment'):
+        for (key, value) in self.config.items('environment'):
             if key == 'env' or key == 'environment':
                 self.env['ARMORY_ENV'] = value
             else:
@@ -90,47 +112,68 @@ class Context:
         pass
 
     def get_module_directory(self, module_name):
-        return self.home_directory + '/modules.d/' + module_name + '/'
+        return self.home_directory + 'modules.d' + os.sep + module_name + '/'
 
     def get_modules_directory(self):
-        return self.home_directory + '/modules.d/'
+        return self.home_directory + 'modules.d' + os.sep
 
     def get_config_directory(self, module_name, env_name):
-        return self.home_directory + '/conf.d/' + module_name + '/' + env_name + '/'
+        return self.home_directory + 'conf.d' + os.sep + module_name + os.sep + env_name + os.sep
 
 
 class Module:
-    def __init__(self, module_directory):
+    MAX_SHORT_DESC_LENGTH = 50
+
+    def __init__(self, module_directory, context):
+
         if not os.path.isdir(module_directory):
             raise NotImplementedError()
 
+        self.context = context
+
         self.module_directory = module_directory
-        self.name = os.path.basename(module_directory)
-        self.module_info_file = self.module_directory + '/' + self.name + '.info'
+        self.name = os.path.basename(module_directory[:-1])
+
+        self.friendly_name = self.name
+        self.module_info_file = self.module_directory + self.name + '.info'
+
         self.version = '~'
         self.description = ''
         self.short_description = ''
         self.config = ConfigParser.SafeConfigParser()
         self.sync()
 
+    def __conf_get(self, name, val):
+        if self.config.has_option('general', name):
+            return self.config.get('general', name)
+        else:
+            return val
+
+
+    def get_processes(self):
+
+        if os.path.exists(self.context.db_directory + 'run/' + self.name + '.pid'):
+            return [open(self.context.db_directory + 'run/' + self.name + '.pid', 'r').read()]
+        elif os.path.exists(self.module_directory + 'ps'):
+            return [int(x) for x in utils.cmd(self.module_directory + 'ps').splitlines()]
+        else:
+            return []
+
     def sync(self):
         if not os.path.exists(self.module_info_file):
             return False
 
-        MAX_SHORT_DESC_LENGHT = 50
-
         self.config.read(self.module_info_file)
 
-        self.version = self.config.get('general', 'version')
-        if self.config.has_option('general', 'name'):
-            self.name = self.config.get('general', 'name')
+        self.version = self.__conf_get('version', self.version)
+        self.friendly_name = self.__conf_get('name', self.name)
 
         if self.config.has_option('general', 'description'):
             self.description = self.config.get('general', 'description')
             self.short_description = self.description.strip().replace('\n', ' ')
             self.short_description = self.short_description.replace('\t', ' ')
-            if len(self.short_description) > MAX_SHORT_DESC_LENGHT:
-                self.short_description = self.short_description[0:MAX_SHORT_DESC_LENGHT - 3] + '...'
+            if len(self.short_description) > Module.MAX_SHORT_DESC_LENGTH:
+                self.short_description = self.short_description[0:Module.MAX_SHORT_DESC_LENGTH - 3] + '...'
 
         return True
 
@@ -141,7 +184,7 @@ class Modules:
 
 
     def get(self, context, module_name):
-        return Module(context.get_module_directory(module_name))
+        return Module(context.get_module_directory(module_name), context)
 
     def from_context(self, context):
         modules = {}

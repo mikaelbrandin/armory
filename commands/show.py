@@ -21,12 +21,12 @@ def command_show(args, context):
 
 
 def command_show_mods(args, context):
-    modules = context.modules.from_directory(args.directory)
+    modules = context.modules.from_context(context)
 
     print "{status:6} {name:30} {version:20} {description:50}".format(name="Name", version="Version", status="Status", description="Description")
 
     for name, module in modules.iteritems():
-        print "[{status:^4}] {name:30} {version:20} {description:50}".format(name=name, version=module.version, status="ok", description=module.short_description)
+        print "[{status:^4}] {name:30} {version:20} {description:50}".format(name=module.friendly_name, version=module.version, status="ok", description=module.short_description)
 
     return None
 
