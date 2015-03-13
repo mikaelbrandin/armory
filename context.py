@@ -57,14 +57,12 @@ class ReadWriteRepositoryDirectory(argparse.Action):
 class Context:
     def __init__(self):
         self.modules = Modules()
-
         self.home_directory = os.getcwd() + os.sep
 
-        if not is_armory_repository_dir(self.home_directory) and 'ARMORY_HOME' in os.environ and os.path.exists(os.environ.get('ARMORY_HOME')) and os.path.isdir(
-                os.environ.get('ARMORY_HOME')):
-            self.home_directory = os.environ.get('ARMORY_HOME')
-            if not self.home_directory.endswith(os.sep):
-                self.home_directory += os.sep
+        self.global_config = self.initialize_global_configuration()
+
+        if not self.home_directory.endswith(os.sep):
+            self.home_directory += os.sep
 
         self.db_directory = self.home_directory + '.armory' + os.sep
         self.config = ConfigParser.SafeConfigParser()
@@ -88,6 +86,20 @@ class Context:
 
         return parser
 
+    def initialize_global_configuration(self):
+        conf = ConfigParser.SafeConfigParser()
+        
+        if os.path.exists('~/.armory'):
+            conf.read('~/.armory');
+            
+        if not is_armory_repository_dir(self.home_directory):
+            if conf.has_option('profile', 'home') and is_armory_repository_dir(conf.get('profile', 'home')):
+                self.home_directory = conf.get('profile', 'home');
+            elif 'ARMORY_HOME' in os.environ and is_armory_repository_dir(os.environ.get('ARMORY_HOME')):
+                self.home_directory = os.environ.get('ARMORY_HOME')
+
+        return conf
+
     def execute(self):
         args = self.args_parser.parse_args()
 
@@ -96,11 +108,12 @@ class Context:
 
         self.config.read(glob.glob(self.home_directory + '*.armory'))
 
-        for (key, value) in self.config.items('environment'):
-            if key == 'env' or key == 'environment':
-                self.env['ARMORY_ENV'] = value
-            else:
-                self.env['ARMORY_' + key.upper()] = value
+        if self.config.has_section('environment'):
+            for (key, value) in self.config.items('environment'):
+                if key == 'env' or key == 'environment':
+                    self.env['ARMORY_ENV'] = value
+                else:
+                    self.env['ARMORY_' + key.upper()] = value
 
         self.env['ARMORY_HOME'] = args.directory
 
@@ -188,7 +201,11 @@ class Modules:
 
     def from_context(self, context):
         modules = {}
-        for subdirectory in os.listdir(context.get_modules_directory()):
-            modules[subdirectory] = self.get(context, subdirectory)
+        
+        try:
+            for subdirectory in os.listdir(context.get_modules_directory()):
+                modules[subdirectory] = self.get(context, subdirectory)
+        except:
+            return modules
 
         return modules
