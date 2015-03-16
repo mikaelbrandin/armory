@@ -2,6 +2,7 @@ __author__ = 'kra869'
 
 import os
 import subprocess
+import utils
 
 
 def init(context):
@@ -14,34 +15,11 @@ def init(context):
 
 
 def init_command(args, context):
-    modules = context.modules.from_context(context)
+
+    (modules, included) = utils.build_modules(context, args.modules);
+    args.modules = included;
 
     context.check_directories()
-
-    if len(args.modules) == 0 or (len(args.modules) == 1 and args.modules[0] == 'all'):
-        all = modules.keys()
-
-        included = []
-        seen = []
-        if context.config.has_section(context.environment):
-            for (key, value) in context.config.items(context.environment):
-                val = str(value).lower().strip()
-                if val == 'true':
-                    included.append(key)
-                else:
-                    print "Ignoring " + key + " in " + context.environment
-
-                seen.append(key)
-
-            for key in all:
-                if key in seen:
-                    continue
-                else:
-                    included.append(key)
-
-            args.modules = included
-        else:
-            args.modules = all
 
     return modules
 

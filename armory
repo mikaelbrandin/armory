@@ -3,13 +3,13 @@
 
 __author__ = 'kra869'
 
-import commands.init as cmd_init
-import commands.status as cmd_status
-import commands.show as cmd_show
-import commands.startstop as cmd_startstop
-import commands.commit as cmd_commit
-import context
-
+import ammo.init as cmd_init
+import ammo.status as cmd_status
+import ammo.show as cmd_show
+import ammo.startstop as cmd_startstop
+import ammo.commit as cmd_commit
+import ammo.push as cmd_push
+import ammo.context as context
 
 context = context.Context()
 
@@ -19,6 +19,7 @@ cmd_status.init(context)
 cmd_show.init(context)
 cmd_startstop.init(context)
 cmd_commit.init(context)
+cmd_push.init(context)
 
 # Execute based on command-line arguments
 context.execute()

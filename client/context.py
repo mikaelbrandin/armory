@@ -59,7 +59,7 @@ class Context:
         self.modules = Modules()
         self.home_directory = os.getcwd() + os.sep
 
-        self.global_config = self.initialize_global_configuration()
+        self.initialize_global_configuration()
 
         if not self.home_directory.endswith(os.sep):
             self.home_directory += os.sep
@@ -89,12 +89,19 @@ class Context:
     def initialize_global_configuration(self):
         conf = ConfigParser.SafeConfigParser()
         
-        if os.path.exists('~/.armory'):
-            conf.read('~/.armory');
+        home_dir = os.path.expanduser("~")
+        
+        if os.path.exists(home_dir+'/.armory'):
+            conf.read(home_dir+'/.armory')
             
         if not is_armory_repository_dir(self.home_directory):
             if conf.has_option('profile', 'home') and is_armory_repository_dir(conf.get('profile', 'home')):
-                self.home_directory = conf.get('profile', 'home');
+                
+                dir = conf.get('profile', 'home')
+                if not dir.endswith(os.sep):
+                    dir += os.sep
+                    
+                self.home_directory = dir
             elif 'ARMORY_HOME' in os.environ and is_armory_repository_dir(os.environ.get('ARMORY_HOME')):
                 self.home_directory = os.environ.get('ARMORY_HOME')
 
