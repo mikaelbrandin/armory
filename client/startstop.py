@@ -27,8 +27,8 @@ def init_command(args, context):
 def command_start(args, context):
     modules = init_command(args, context)
 
-    for service in args.services:
-        start(args, context, modules[service])
+    for module in args.modules:
+        start(args, context, modules[module])
 
     return None
 
@@ -36,15 +36,15 @@ def command_start(args, context):
 def command_stop(args, context):
     modules = init_command(args, context)
 
-    for service in args.modules:
-        stop(args, context, modules[service])
+    for module in args.modules:
+        stop(args, context, modules[module])
 
     return None
 
 
 def start(args, context, module):
     if not os.path.exists(module.module_directory + '/stop'):
-        print "Unable to start " + module.name + " no start script"
+        print "Unable to start '" + module.name + "', no start script"
         return False
 
     pids = module.get_processes()
