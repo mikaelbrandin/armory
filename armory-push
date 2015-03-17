@@ -2,8 +2,9 @@
 # coding=utf-8
 
 import sys
-import ammo.protocol as proc
+import client.protocol as proc
 import os
+import subprocess
 
 pid = str(os.getpid());
 
@@ -34,3 +35,4 @@ proc.write_msg(sys.stdout, "accept");
 for push in incoming:
     debug("incoming "+push.package)
     proc.read_file(sys.stdin, push.package+"-"+push.hash+".pack", push.hash)
+    subprocess.call(["armory-repo", "--yes", "push", "--remove", push.package+"-"+push.hash+".pack"])

@@ -10,6 +10,10 @@ if os.path.exists('/usr/local/bin/armory'):
     
 if os.path.exists('/usr/local/bin/armory-push'):
     os.remove('/usr/local/bin/armory-push')
+    
+if os.path.exists('/usr/local/bin/armory-repoh'):
+    os.remove('/usr/local/bin/armory-repo')
 
 os.symlink(armory_bin + os.sep + "armory", "/usr/local/bin/armory")    
 os.symlink(armory_bin + os.sep + "armory-push", "/usr/local/bin/armory-push")
+os.symlink(armory_bin + os.sep + "armory-repo", "/usr/local/bin/armory-repo")

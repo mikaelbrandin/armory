@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+# coding=utf-8
+
+__author__ = 'kra869'
+
+import repository.context as context
+import repository.init as cmd_init
+import repository.push as cmd_push
+
+#Create context
+context = context.Context()
+
+#Register commands
+cmd_init.init(context)
+cmd_push.init(context)
+
+context.execute();

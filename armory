@@ -3,13 +3,13 @@
 
 __author__ = 'kra869'
 
-import ammo.init as cmd_init
-import ammo.status as cmd_status
-import ammo.show as cmd_show
-import ammo.startstop as cmd_startstop
-import ammo.commit as cmd_commit
-import ammo.push as cmd_push
-import ammo.context as context
+import client.init as cmd_init
+import client.status as cmd_status
+import client.show as cmd_show
+import client.startstop as cmd_startstop
+import client.commit as cmd_commit
+import client.push as cmd_push
+import client.context as context
 
 context = context.Context()
 
