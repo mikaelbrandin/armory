@@ -14,29 +14,19 @@ def init(context):
     return None
 
 
-def init_command(args, context):
-
-    (modules, included) = utils.build_modules(context, args.modules);
-    args.modules = included;
-
-    context.check_directories()
-
-    return modules
-
-
 def command_start(args, context):
-    modules = init_command(args, context)
+    (modules, included) = utils.build_modules(context, args.modules);
 
-    for module in args.modules:
+    for module in included:
         start(args, context, modules[module])
 
     return None
 
 
 def command_stop(args, context):
-    modules = init_command(args, context)
+    (modules, included) = utils.build_modules(context, args.modules);
 
-    for module in args.modules:
+    for module in included:
         stop(args, context, modules[module])
 
     return None
