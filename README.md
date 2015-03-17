@@ -15,3 +15,6 @@ armory create-module <NAME>
 #Commit changes and push to remote
 armory commit <MODULE>
 armory push <MODULE>
+
+TODO:
+* Context sensitive directory (basically armory commit from module directory notice the module context)

@@ -22,8 +22,8 @@ class Process:
     def write_file(self,file, hash):
         return proc.write_file(self.process.stdin, file, hash)
         
-    def read_file(self, package, hash):
-        return proc.read_file(self.process.stdout, package, hash)
+    def read_file(self, file, hash):
+        return proc.read_file(self.process.stdout, file, hash)
         
     def wait(self):
         self.process.wait();
@@ -53,6 +53,29 @@ class Client:
             return  None
         elif msg.msg == 'error':
             print "Error "+packageName
+            return  None
+        else:
+            print "oops"
+            return None
+            
+    def pull(self, module, version, dst):
+        
+        p = Process('armory-pull', self.uri.path);
+        
+        msg = p.read_msg();
+        p.write_msg("pull /modules/"+module+'/'+version);
+        p.write_msg("ok");
+        
+        msg = p.read_msg();
+        if msg.msg == 'accept':
+            p.read_file(dst, 0)
+            p.wait()
+            return None
+        elif msg.msg == 'reject':
+            print "Rejected"
+            return  None
+        elif msg.msg == 'error':
+            print "Error "
             return  None
         else:
             print "oops"

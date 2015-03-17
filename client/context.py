@@ -76,13 +76,12 @@ class Context:
         self.args_parser.add_argument('--debug', action='store_true', help='Enable debugging (mainly)')
         self.args_parser.add_argument('--directory', metavar='FILE', action=ReadWriteRepositoryDirectory, default=self.home_directory)
         self.sub_args_parsers = self.args_parser.add_subparsers(title='Armory commands', description='The commands available with Armory', help='Available Armory commmands')
-
     def register_command(self, cmd, command, **kwargs):
         if kwargs.get('help') is None:
             kwargs['help'] = '<No Help Available>'
 
         parser = self.sub_args_parsers.add_parser(cmd, help=kwargs.get('help'))
-        parser.set_defaults(command=command)
+        parser.set_defaults(command=command, directory_filter=kwargs.get('directory_filter'))
 
         return parser
 
@@ -109,9 +108,17 @@ class Context:
 
     def execute(self):
         args = self.args_parser.parse_args()
+        
+        if args.directory_filter:
+            args.directory = args.directory_filter(args);
+            
+        if not args.directory.endswith(os.sep):
+            args.directory += os.sep
 
         self.home_directory = args.directory
         self.db_directory = args.directory + '.armory' + os.sep
+        
+        
 
         self.config.read(glob.glob(self.home_directory + '*.armory'))
 

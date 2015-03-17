@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+# coding=utf-8
+
+import sys
+import client.protocol as proc
+import os
+import subprocess
+import ConfigParser
+import distutils.version as Versions
+
+pid = str(os.getpid());
+
+def debug(*args):
+    sys.stderr.write(pid+":"+' '.join(map(str,args)) + '\n')
+
+proc.write_msg(sys.stdout, "helo v=1.0.0");
+
+outgoing = []
+
+    
+def pull_module(module, version):
+
+    dir = os.getcwd()+os.sep+'modules'+os.sep+module+os.sep
+    if not os.path.exists(dir):
+        debug(module+' does not exist');
+        sys.exit(1)
+        
+    versions = ConfigParser.SafeConfigParser();
+    versions.read(dir+'VERSIONS')
+    
+    latest = None
+    for version in versions.sections():
+        v = Versions.LooseVersion(version)
+        
+        if not latest:
+            latest = v;
+        elif v > latest:
+            latest = v
+            
+    
+    debug("latest="+str(latest))
+    pack = os.getcwd()+os.sep+'packages'+os.sep+module+'-'+str(latest)+'.pack'
+    if os.path.exists(pack):
+        debug("pack="+pack)
+        proc.write_file(sys.stdout, pack, 0)
+    else:
+        debug("missing pack="+pack)
+        sys.exit(1);
+    
+    
+
+while True:
+
+    msg = proc.read_msg(sys.stdin)
+    
+    if msg.msg == 'ok':
+        debug("ok")
+        break
+    elif msg.msg == 'pull':
+        debug("pull")
+        outgoing.append(msg.params[0])
+    else:
+        debug("error")
+        proc.write_msg(sys.stdout, "error")
+        sys.exit(1)
+
+proc.write_msg(sys.stdout, "accept");
+
+for req in outgoing:
+    debug("outgoing "+req)
+    
+    path = req.split('/')[1:]
+    
+    if path[0] == 'modules':
+        pull_module(path[1], path[2])
+        
+    debug(str(path))
