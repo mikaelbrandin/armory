@@ -35,4 +35,5 @@ proc.write_msg(sys.stdout, "accept");
 for push in incoming:
     debug("incoming "+push.package)
     proc.read_file(sys.stdin, push.package+"-"+push.hash+".pack", push.hash)
+    debug("pushing "+push.package+" to repository")
     subprocess.call(["armory-repo", "--yes", "push", "--remove", push.package+"-"+push.hash+".pack"])

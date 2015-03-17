@@ -44,15 +44,15 @@ class Client:
         msg = p.read_msg();
         
         if msg.msg == 'accept':
-            print "accepted"
+            print "-> "+packageName
             p.write_file(packageFile, packageHash)
             p.wait()
             return None
         elif msg.msg == 'reject':
-            print "rejected"
+            print "Rejected "+packageName
             return  None
         elif msg.msg == 'error':
-            print "error"
+            print "Error "+packageName
             return  None
         else:
             print "oops"

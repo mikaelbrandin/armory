@@ -21,7 +21,6 @@ def write_msg(output, msg):
     length = "{0:0{1}x}".format(len(msg) + 2, 3)
     n = output.write(length+" "+msg+"\n")
     output.flush()
-    
     return n
     
     
@@ -39,11 +38,8 @@ def read_msg(input):
 def write_file(output, file, hash):
     BLOCKSIZE = 65000
     pack_size = os.path.getsize(file)
-    
-    debug("writing block header")
     header = struct.pack(HEADER_STRUCT, 10, pack_size)
     output.write(header);
-    debug("pack_size="+str(pack_size)+" header="+str(len(header)));
     output.flush();
     
     with open(file, 'rb') as f:
@@ -58,11 +54,8 @@ def write_file(output, file, hash):
     
 def write_empty_file(output, hash):
     pack_size = 0
-    
-    debug("writing block header")
     header = struct.pack(HEADER_STRUCT, 10, pack_size)
     output.write(header);
-    debug("pack_size="+str(pack_size)+" header="+str(len(header)));
     output.flush();
     
     return pack_size
@@ -72,11 +65,9 @@ def read_file(input, dest_file, hash):
     BLOCKSIZE = 65000
 
     header_size = struct.calcsize(HEADER_STRUCT)
-    debug("reading header="+str(header_size))
     header = struct.unpack(HEADER_STRUCT, input.read(header_size));
     
     remaining = header[1];
-    debug("total="+str(remaining))
     
     with open(dest_file, "w+") as f:
         while remaining > 0:

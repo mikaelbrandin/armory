@@ -2,6 +2,8 @@ import clients
 import utils
 import glob
 import os
+import shutil
+import ConfigParser
 
 def init(context):
 
@@ -21,13 +23,26 @@ def command_push(args, context):
     pass
     
 def push(args, context, module):
-    print module.name
-    client = clients.create('file:///opt/armory_repo/')
-    dir = context.db_directory+'commits'+os.sep+module.name+os.sep
     
-    if not os.path.exists(dir):
+    repos = ConfigParser.SafeConfigParser()
+    repos.read(context.db_directory+'repositories')
+    
+    if not repos.has_option('modules', module.name):
+        print "No remote repository for "+module.name
+        return False
+        
+    repository_uri = repos.get('modules', module.name)
+    
+    client = clients.create(repository_uri)
+    
+    commit_dir = context.db_directory+'commits'+os.sep+module.name+os.sep
+    if not os.path.exists(commit_dir):
+        print "Nothing to push for "+module.name
         return False
     
-    hash = utils.read_file(dir+module.name+'.commit')
-    print hash+ " "+module.name
-    client.push(module.name, dir+module.name+'.pack', hash)
+    hash = utils.read_file(commit_dir+module.name+'.commit')
+    print "Pushing "+hash+" "+module.name
+    client.push(module.name, commit_dir+module.name+'.pack', hash)
+    
+    #Remove commit (as its be pushed)
+    shutil.rmtree(commit_dir)
