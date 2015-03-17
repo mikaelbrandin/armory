@@ -168,7 +168,22 @@ class Module:
         self.description = ''
         self.short_description = ''
         self.config = ConfigParser.SafeConfigParser()
-        self.sync()
+        self.status = "ok"
+        
+        if not os.path.exists(self.module_info_file):
+            self.status = 'error'
+        else:
+            self.config.read(self.module_info_file)
+
+            self.version = self.__conf_get('version', self.version)
+            self.friendly_name = self.__conf_get('name', self.name)
+
+            if self.config.has_option('general', 'description'):
+                self.description = self.config.get('general', 'description')
+                self.short_description = self.description.strip().replace('\n', ' ')
+                self.short_description = self.short_description.replace('\t', ' ')
+                if len(self.short_description) > Module.MAX_SHORT_DESC_LENGTH:
+                    self.short_description = self.short_description[0:Module.MAX_SHORT_DESC_LENGTH - 3] + '...'
 
     def __conf_get(self, name, val):
         if self.config.has_option('general', name):

@@ -43,7 +43,7 @@ def display_status(args, context, module):
     if len(pids) > 0:
         stat = 'running with ' + str(len(pids)) + ' processes'
 
-    print "{name}/{fname}".format(status=stat, fname=module.friendly_name, name=module.name)
+    print module.name
     print "[{status}]".format(status=stat)
     for pid in pids:
         if pid == -1:
