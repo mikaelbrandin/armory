@@ -33,7 +33,7 @@ def is_armory_repository_dir(dir):
         return False
     elif not os.access(dir, os.R_OK):
         return False
-    elif not os.path.exists(dir + '.armory'):
+    elif not os.path.exists(dir + '.armory' + os.sep):
         return False
     elif not os.access(dir, os.W_OK):
         return False
@@ -76,6 +76,7 @@ class Context:
         self.args_parser.add_argument('--debug', action='store_true', help='Enable debugging (mainly)')
         self.args_parser.add_argument('--directory', metavar='FILE', action=ReadWriteRepositoryDirectory, default=self.home_directory)
         self.sub_args_parsers = self.args_parser.add_subparsers(title='Armory commands', description='The commands available with Armory', help='Available Armory commmands')
+        
     def register_command(self, cmd, command, **kwargs):
         if kwargs.get('help') is None:
             kwargs['help'] = '<No Help Available>'

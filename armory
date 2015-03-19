@@ -7,7 +7,7 @@ import client.init as cmd_init
 import client.status as cmd_status
 import client.show as cmd_show
 import client.startstop as cmd_startstop
-import client.commit as cmd_commit
+import client.package as cmd_package
 import client.push as cmd_push
 import client.pull as cmd_pull
 import client.context as context
@@ -19,7 +19,7 @@ cmd_init.init(context)
 cmd_status.init(context)
 cmd_show.init(context)
 cmd_startstop.init(context)
-cmd_commit.init(context)
+cmd_package.init(context)
 cmd_push.init(context)
 cmd_pull.init(context)
 
