@@ -2,7 +2,20 @@ __author__ = 'kra869'
 
 import os
 import subprocess
+import sys
+import pwd
+
 import utils
+
+
+class StartException(BaseException):
+    def __init__(self):
+        pass
+
+
+class StopException(BaseException):
+    def __init__(self):
+        pass
 
 
 def init(context):
@@ -15,16 +28,42 @@ def init(context):
 
 
 def command_start(args, context):
-    (modules, included) = utils.build_modules(context, args.modules);
+    (modules, included) = utils.build_modules(context, args.modules)
 
-    for module in included:
-        start(args, context, modules[module])
+    effective_uid = os.geteuid()
 
-    return None
+    # Check for root
+    if effective_uid != 0:
+        print "Please run with root as effective user"
+        raise StartException()
+
+    default_pw = pwd.getpwnam(os.getlogin())
+    uid = default_pw.pw_uid
+    gid = default_pw.pw_gid
+
+    for name in included:
+        module = modules[name]
+
+        if module.run_as_user is not None:
+            pw = pwd.getpwnam(module.run_as_user)
+            override_uid = pw.pw_uid
+            override_gid = pw.pw_gid
+            start(args, context, module, override_uid, override_gid)
+        else:
+            start(args, context, module, uid, gid)
+
+        return None
 
 
 def command_stop(args, context):
-    (modules, included) = utils.build_modules(context, args.modules);
+    (modules, included) = utils.build_modules(context, args.modules)
+
+    effective_uid = os.geteuid()
+
+    # Check for root
+    if effective_uid != 0:
+        print "Please run with root as effective user"
+        raise StartException()
 
     for module in included:
         stop(args, context, modules[module])
@@ -32,45 +71,96 @@ def command_stop(args, context):
     return None
 
 
-def start(args, context, module):
-    if not os.path.exists(module.module_directory + '/stop'):
-        print "Unable to start '" + module.name + "', no start script"
-        return False
+def demote(uid, gid):
+    def result():
+        os.setgid(gid)
+        os.setuid(uid)
+        os.setpgrp()
 
+    return result
+
+
+def start(args, context, module, uid, gid):
     pids = module.get_processes()
+    # TODO: Check that process id is active!
 
     if len(pids) > 0:
         print module.name + " already started"
         return True
 
-    print "Starting " + module.name
+    print "starting " + module.name
 
     env = os.environ.copy()
     env.update(context.env)
-
     env['ARMORY_MODULE_DIRECTORY'] = context.get_module_directory(module.name)
     env['ARMORY_MODULE_CONF_DIRECTORY'] = context.get_config_directory(module.name, env['ARMORY_ENV'])
 
-    subprocess.call(module.module_directory + '/start', env=env)
+    if os.path.exists(module.module_directory + 'run'):
+        start_with_runscript(args, context, module, env, uid, gid)
+    elif os.path.exists(module.module_directory + 'start'):
+        start_with_startscript(args, context, module, env, uid, gid)
+    else:
+        raise StartException()
+
+    # subprocess.call(module.module_directory + 'start', env=env)
     return True
 
 
+def start_with_runscript(args, context, module, env, uid, gid):
+    proc = subprocess.Popen(
+        ['nohup', module.module_directory + 'start'],
+        env=env,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+        preexec_fn=demote(uid, gid)
+    )
+
+    if not os.path.exists(context.db_directory + 'run' + os.sep):
+        os.makedirs(context.db_directory + 'run' + os.sep)
+
+    print "run pid={pid}".format(pid=proc.pid)
+    with open(context.db_directory + 'run' + os.sep + module.name + '.pid', "w+") as pidfile:
+        pidfile.write(str(proc.pid))
+
+
+def start_with_startscript(args, context, module, env, uid, gid):
+    proc = subprocess.Popen(
+        ['nohup', module.module_directory + 'start'],
+        env=env,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+        preexec_fn=demote(uid, gid)
+    )
+    print "start pid={pid}".format(pid=proc.pid)
+
+
 def stop(args, context, module):
+    pids = module.get_processes()
+
+    if len(pids) == 0:
+        print module.name + " not running"
+        return True
+
     if not os.path.exists(module.module_directory + '/stop'):
         print "Unable to stop " + module.name + " no stop script"
         return False
 
-        if len(pids) == 0:
-            print module.name + " not running"
-            return True
-
     env = os.environ.copy()
     env.update(context.env)
-
-    print "Stopping " + module.name
-
     env['ARMORY_MODULE_DIRECTORY'] = context.get_module_directory(module.name)
     env['ARMORY_MODULE_CONF_DIRECTORY'] = context.get_config_directory(module.name, env['ARMORY_ENV'])
 
-    subprocess.call(module.module_directory + '/stop', env=env)
+    if os.path.exists(context.db_directory + 'run' + os.sep + module.name + '.pid'):
+        print "stopping (pid)" + module.name
+        with open(context.db_directory + 'run' + os.sep + module.name + '.pid', 'r') as pidfile:
+            pid = int(pidfile.read())
+            os.kill(pid)
+
+        os.remove(context.db_directory + 'run' + os.sep + module.name + '.pid')
+    elif os.path.exists(module.module_directory + 'stop'):
+        print "stopping (stop-script) " + module.name
+        subprocess.call(module.module_directory + 'stop', env=env)
+    else:
+        raise StopException()
+
     return True

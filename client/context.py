@@ -76,7 +76,7 @@ class Context:
         self.args_parser.add_argument('--debug', action='store_true', help='Enable debugging (mainly)')
         self.args_parser.add_argument('--directory', metavar='FILE', action=ReadWriteRepositoryDirectory, default=self.home_directory)
         self.sub_args_parsers = self.args_parser.add_subparsers(title='Armory commands', description='The commands available with Armory', help='Available Armory commmands')
-        
+
     def register_command(self, cmd, command, **kwargs):
         if kwargs.get('help') is None:
             kwargs['help'] = '<No Help Available>'
@@ -88,19 +88,19 @@ class Context:
 
     def initialize_global_configuration(self):
         conf = ConfigParser.SafeConfigParser()
-        
-        home_dir = os.path.expanduser("~")
-        
-        if os.path.exists(home_dir+'/.armory'):
-            conf.read(home_dir+'/.armory')
-            
+
+        home_dir = os.path.expanduser(os.getlogin())
+
+        if os.path.exists(home_dir + '/.armory'):
+            conf.read(home_dir + '/.armory')
+
         if not is_armory_repository_dir(self.home_directory):
             if conf.has_option('profile', 'home') and is_armory_repository_dir(conf.get('profile', 'home')):
-                
+
                 dir = conf.get('profile', 'home')
                 if not dir.endswith(os.sep):
                     dir += os.sep
-                    
+
                 self.home_directory = dir
             elif 'ARMORY_HOME' in os.environ and is_armory_repository_dir(os.environ.get('ARMORY_HOME')):
                 self.home_directory = os.environ.get('ARMORY_HOME')
@@ -109,17 +109,15 @@ class Context:
 
     def execute(self):
         args = self.args_parser.parse_args()
-        
+
         if args.directory_filter:
             args.directory = args.directory_filter(args);
-            
+
         if not args.directory.endswith(os.sep):
             args.directory += os.sep
 
         self.home_directory = args.directory
         self.db_directory = args.directory + '.armory' + os.sep
-        
-        
 
         self.config.read(glob.glob(self.home_directory + '*.armory'))
 
@@ -170,7 +168,7 @@ class Module:
         self.short_description = ''
         self.config = ConfigParser.SafeConfigParser()
         self.status = "ok"
-        
+
         if not os.path.exists(self.module_info_file):
             self.status = 'error'
         else:
@@ -178,6 +176,14 @@ class Module:
 
             self.version = self.__conf_get('version', self.version)
             self.friendly_name = self.__conf_get('name', self.name)
+            self.run_as_user = None
+            self.run_as_group = None
+
+            if self.config.has_option('user', 'name'):
+                self.run_as_user = self.config.get('user', 'name')
+
+            if self.config.has_option('user', 'group'):
+                self.run_as_group = self.config.get('user', 'group')
 
             if self.config.has_option('general', 'description'):
                 self.description = self.config.get('general', 'description')
@@ -196,7 +202,16 @@ class Module:
     def get_processes(self):
 
         if os.path.exists(self.context.db_directory + 'run/' + self.name + '.pid'):
-            return [open(self.context.db_directory + 'run/' + self.name + '.pid', 'r').read()]
+            pid = False
+            with open(self.context.db_directory + 'run/' + self.name + '.pid', 'r') as pidfile:
+                pid = int(pidfile.read())
+
+            if pid and os.path.exists('/proc/' + str(pid)):
+                return [pid]
+            else:
+                print "Non-existing pid=" + str(pid)
+                return []
+
         elif os.path.exists(self.module_directory + 'ps'):
             return [int(x) for x in utils.cmd(self.module_directory + 'ps').splitlines()]
         else:
@@ -231,7 +246,7 @@ class Modules:
 
     def from_context(self, context):
         modules = {}
-        
+
         try:
             for subdirectory in os.listdir(context.get_modules_directory()):
                 modules[subdirectory] = self.get(context, subdirectory)
