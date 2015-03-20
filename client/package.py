@@ -9,6 +9,7 @@ import ConfigParser
 import datetime
 import context as ctx
 import tempfile
+import sys
 
 class PackageException(BaseException):
     def __init__(self, msg):

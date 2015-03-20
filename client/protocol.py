@@ -52,6 +52,25 @@ def write_file(output, file, hash):
             
     return pack_size
     
+def write_file_progress(output, file, hash, fd):
+    BLOCKSIZE = 65000
+    pack_size = os.path.getsize(file)
+    header = struct.pack(HEADER_STRUCT, 10, pack_size)
+    output.write(header);
+    output.flush();
+    N = 0
+    with open(file, 'rb') as f:
+        buf = f.read(BLOCKSIZE)
+        while len(buf) > 0:
+            N += len(buf)
+            fd.write("\r{procentage:%}".format(procentage=(N / pack_size)))
+            output.write(buf)
+            output.flush()
+            buf = f.read(BLOCKSIZE)
+            
+            
+    return pack_size
+    
 def write_empty_file(output, hash):
     pack_size = 0
     header = struct.pack(HEADER_STRUCT, 10, pack_size)
