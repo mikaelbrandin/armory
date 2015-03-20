@@ -89,7 +89,8 @@ class Context:
     def initialize_global_configuration(self):
         conf = ConfigParser.SafeConfigParser()
 
-        home_dir = os.path.expanduser(os.getlogin())
+        home_dir = os.path.expanduser('~' + os.getlogin())
+        print "user=" + os.getlogin() + " home=" + home_dir
 
         if os.path.exists(home_dir + '/.armory'):
             conf.read(home_dir + '/.armory')

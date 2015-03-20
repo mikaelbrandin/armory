@@ -5,17 +5,19 @@ import subprocess
 import sys
 import pwd
 
+import exceptions
+
 import utils
 
 
-class StartException(BaseException):
-    def __init__(self):
-        pass
+class StartException(exceptions.ArmoryException):
+    def __init__(self, msg):
+        super(StartException, self).__init__(msg)
 
 
-class StopException(BaseException):
-    def __init__(self):
-        pass
+class StopException(exceptions.ArmoryException):
+    def __init__(self, msg):
+        super(StopException, self).__init__(msg)
 
 
 def init(context):
@@ -34,8 +36,7 @@ def command_start(args, context):
 
     # Check for root
     if effective_uid != 0:
-        print "Please run with root as effective user"
-        raise StartException()
+        raise StartException("Please run with root as effective user")
 
     default_pw = pwd.getpwnam(os.getlogin())
     uid = default_pw.pw_uid
@@ -62,8 +63,7 @@ def command_stop(args, context):
 
     # Check for root
     if effective_uid != 0:
-        print "Please run with root as effective user"
-        raise StartException()
+        raise StopException("Please run with root as effective user")
 
     for module in included:
         stop(args, context, modules[module])
@@ -100,7 +100,7 @@ def start(args, context, module, uid, gid):
     elif os.path.exists(module.module_directory + 'start'):
         start_with_startscript(args, context, module, env, uid, gid)
     else:
-        raise StartException()
+        raise StartException("Unable to start, missing start scripts")
 
     # subprocess.call(module.module_directory + 'start', env=env)
     return True
@@ -161,6 +161,6 @@ def stop(args, context, module):
         print "stopping (stop-script) " + module.name
         subprocess.call(module.module_directory + 'stop', env=env)
     else:
-        raise StopException()
+        raise StopException("Missing stop scripts")
 
     return True

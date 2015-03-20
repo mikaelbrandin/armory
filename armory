@@ -11,6 +11,7 @@ import client.package as cmd_package
 import client.push as cmd_push
 import client.pull as cmd_pull
 import client.context as context
+import client.exceptions as exceptions
 
 context = context.Context()
 
@@ -24,6 +25,10 @@ cmd_push.init(context)
 cmd_pull.init(context)
 
 # Execute based on command-line arguments
-context.execute()
+try:
+    context.execute()
+except exceptions.ArmoryException as e:
+    e.print_message()
+
 
 
