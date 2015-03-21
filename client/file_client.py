@@ -42,13 +42,13 @@ class Client:
         p = Process(self.cmd, self.uri.path)
 
         msg = p.read_msg();
+        
         p.write_msg("push {package} {hash}".format(package=packageName, hash=packageHash))
         p.write_msg("ok");
 
         msg = p.read_msg();
 
         if msg.msg == 'accept':
-            print "-> " + packageName
             p.write_file(packageFile, packageHash)
             p.wait()
             return None
@@ -56,7 +56,7 @@ class Client:
             print "Rejected " + packageName
             return None
         elif msg.msg == 'error':
-            print "Error " + packageName
+            print "error: " + packageName + " " + str(msg.params)
             return None
         else:
             print "oops"

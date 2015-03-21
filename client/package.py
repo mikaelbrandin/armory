@@ -30,13 +30,13 @@ def command_package(args, context):
     
     for src in args.sources:
         if src in modules:
-            commit_module(args, context, modules[src])
+            package_module(args, context, modules[src])
         elif os.path.exists(src) and os.path.isdir(src):
             if not src.endswith(os.sep):
                 src = src + os.sep
                 
             module = ctx.Module(src, context)
-            commit_module(args, context, module)
+            package_module(args, context, module)
         else:
             raise PackageException("Missing source, nothing to package")
             
@@ -45,7 +45,7 @@ def command_package(args, context):
     #    commit(args, context, modules[mod_name])
     
     
-def commit_module(args, context, module):
+def package_module(args, context, module):
     
     #Read module .info file
     info = ConfigParser.SafeConfigParser()
@@ -58,7 +58,7 @@ def commit_module(args, context, module):
     print module.name + "("+version+") from " + module.module_directory
     
     #Create temporary directory
-    dir = tempfile.mkdtemp()
+    dir = tempfile.mkdtemp('am-package') + os.sep
     
     if not os.path.exists(dir):
         os.makedirs(dir);

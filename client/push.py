@@ -4,45 +4,72 @@ import glob
 import os
 import shutil
 import ConfigParser
+import tempfile
+import tarfile
+import exceptions
+
+class PushException(exceptions.ArmoryException):
+    def __init__(self, msg):
+        super(PushException, self).__init__(msg)
 
 def init(context):
 
     parser = context.register_command('push', command_push, help='Push commited packages')
-    parser.add_argument('modules', metavar='MODULE', nargs='*')
+    parser.add_argument('repository', metavar='URL', help='repository uri')
+    parser.add_argument('packs', metavar='FILE', nargs='+', help='package file (module or configuration)')
     
     return None
     
 def command_push(args, context):
 
-    (modules, included) = utils.build_modules(context, args.modules);
+    modules = context.modules.from_context(context)
     
-    for mod_name in included:
-        module = modules[mod_name];
-        push(args, context, module)
+    for pack_file in args.packs:
+            
+        if os.path.exists(pack_file) and pack_file.endswith('.pack'):
+            push(args, context, pack_file)
+        else:
+            raise PushException("No such file: "+pack_file)
     
     pass
     
-def push(args, context, module):
+def push(args, context, pack_file):
+
+    tmp_dir = tempfile.mkdtemp('am-push') + os.sep
+    tmp_pack_file = tmp_dir+'tmp.pack'
+    tmp_manifest = tmp_dir+'MANIFEST'
+    tmp_metainfo = tmp_dir+'METAINF'
     
-    repos = ConfigParser.SafeConfigParser()
-    repos.read(context.db_directory+'repositories')
+    with tarfile.open(pack_file, 'r') as pack:
+        pack.extract('MANIFEST', tmp_dir);
+        pack.extract('METAINF', tmp_dir);
     
-    if not repos.has_option('modules', module.name):
-        print "No remote repository for "+module.name
-        return False
+    metainfo = ConfigParser.SafeConfigParser()
+    metainfo.read(tmp_metainfo)
+    
+    module_name = metainfo.get('meta', 'name');
+    module_version = metainfo.get('meta', 'version');
+    module_hash = metainfo.get('meta', 'hash');
+    
+    #if not (repos.has_option('modules', module_name) or repos.has_option('modules', 'default')):
+    #    print "Unable to resolve remote repository for "+context.home_directory
+    #    shutil.rmtree(tmp_dir)
+    #    return False
         
-    repository_uri = repos.get('modules', module.name)
+    repository_uri = args.repository
     
+    #if repos.has_option('modules', 'default'):
+    #    repository_uri = repos.get('modules', 'default')
+    
+    #if repos.has_option('modules', module_name):
+    #    repository_uri = repos.get('modules', module_name)
+        
+    
+    print module_name + "( "+ module_version  + " ) -> "+repository_uri
     client = clients.create(repository_uri)
     
-    commit_dir = context.db_directory+'commits'+os.sep+module.name+os.sep
-    if not os.path.exists(commit_dir):
-        print "Nothing to push for "+module.name
-        return False
-    
-    hash = utils.read_file(commit_dir+module.name+'.commit')
-    print "Pushing "+hash+" "+module.name
-    client.push(module.name, commit_dir+module.name+'.pack', hash)
-    
-    #Remove commit (as its be pushed)
-    shutil.rmtree(commit_dir)
+    #Push file
+    client.push(module_name, pack_file, module_hash)
+
+    #Clean Up
+    shutil.rmtree(tmp_dir)
