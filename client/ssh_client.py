@@ -1,11 +1,40 @@
 __author__ = 'kra869'
 
-import file_client
+import base_client
+import os
+import getpass
+import sys
+import subprocess
 
-
-class Client(file_client.Client):
-    def __init__(self):
-        super(Client, self)
-        self.cmd = "ssh {username}@{host} cd {path}; armory-push".format(username=self.uri.username, host=self.uri.netloc, path=self.uri.path)
+class Client(base_client.IOClient):
+    PUSH = "ssh {server} \"cd {path}; armory-push\""
+    def __init__(self, uri):
+        base_client.IOClient.__init__(self, uri)
+      
+        pass
+        
+    def connect(self, uri, feature):
+        if feature is 'push':
+            return self.get_shell(Client.PUSH)
+        return None
+    
+    def get_shell(self, cmd):
+        print str(self.uri)
+        cmd = cmd.format(server=self.uri.netloc, path=self.uri.path)
+        shell = base_client.Shell(cmd, os.getcwd())
+        self.check_askpass(shell)
+        return shell
+    
+    def check_askpass(self, shell):
+        while True:
+            line = shell.read_line();
+            if line.startswith('helo'):
+                return True;
+            else:
+                sys.stdout.write(line)
+                pw = getpass.getpass();
+                shell.write_line(pw)
+        
+    def cleanup(self):
         pass
         

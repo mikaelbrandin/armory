@@ -18,22 +18,22 @@ def debug(msg):
     sys.stderr.write(NAME+":"+msg+"\n")
 
 def write_msg(output, msg):
-    length = "{0:0{1}x}".format(len(msg) + 2, 3)
-    n = output.write(length+" "+msg+"\n")
+    n = output.write(msg+"\n")
     output.flush()
     return n
     
     
 def read_msg(input):
-    line = input.readline().split();
+    line = input.readline()
+    line = line.split();
     params = []
-    if len(line) < 2:
+    if len(line) < 1:
         return Message(msg="error", params=params)
         
-    if len(line) > 2:
-        params = line[2:]
+    if len(line) > 1:
+        params = line[1:]
     
-    return Message(msg=line[1], params=params)
+    return Message(msg=line[0], params=params)
     
 def write_file(output, file, hash):
     BLOCKSIZE = 65000
