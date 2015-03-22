@@ -6,6 +6,7 @@ __author__ = 'mikael.brandin'
 import repository.context as context
 import repository.init as cmd_init
 import repository.push as cmd_push
+import repository.branch as cmd_branch
 
 #Create context
 context = context.Context()
@@ -13,5 +14,6 @@ context = context.Context()
 #Register commands
 cmd_init.init(context)
 cmd_push.init(context)
+cmd_branch.init(context)
 
 context.execute();

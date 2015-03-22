@@ -74,6 +74,7 @@ class Context:
 
         self.args_parser = argparse.ArgumentParser(prog='Armory')
         self.args_parser.add_argument('--debug', action='store_true', help='Enable debugging (mainly)')
+        self.args_parser.add_argument('--environment', metavar='ENV', help='use ENV as current environment')
         self.args_parser.add_argument('--directory', metavar='FILE', action=ReadWriteRepositoryDirectory, default=self.home_directory)
         self.sub_args_parsers = self.args_parser.add_subparsers(title='Armory commands', description='The commands available with Armory', help='Available Armory commmands')
 
@@ -88,7 +89,6 @@ class Context:
 
     def initialize_global_configuration(self):
         conf = ConfigParser.SafeConfigParser()
-
         home_dir = os.path.expanduser('~' + os.getlogin())
 
         if os.path.exists(home_dir + '/.armory'):
@@ -118,20 +118,24 @@ class Context:
 
         self.home_directory = args.directory
         self.db_directory = args.directory + '.armory' + os.sep
+        
+        self.db = ConfigParser.SafeConfigParser()
+        self.db.read(self.db_directory+'DB')
+        
+        if 'environment' in args:
+            self.environment = args.environment
+        elif self.db.has_option('environment', 'default'):
+            self.environment = self.db.get('environment', 'default')
 
-        self.config.read(glob.glob(self.home_directory + '*.armory'))
+        self.config.read(self.home_directory+self.environment+'.armory')
 
         if self.config.has_section('environment'):
             for (key, value) in self.config.items('environment'):
-                if key == 'env' or key == 'environment':
-                    self.env['ARMORY_ENV'] = value
-                else:
-                    self.env['ARMORY_' + key.upper()] = value
+                self.env['ARMORY_' + key.upper()] = value
 
-        self.env['ARMORY_HOME'] = args.directory
+        self.env['ARMORY_HOME'] = self.home_directory
 
         args.command(args, self)
-
         return None
 
     def check_directories(self):

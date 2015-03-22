@@ -11,8 +11,6 @@ def is_armory_central_repo_dir(dir):
         return False
     elif not os.access(dir, os.R_OK):
         return False
-    elif not os.path.exists(dir + 'ARMORY'):
-        return False
     elif not os.access(dir, os.W_OK):
         return False
 

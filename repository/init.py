@@ -1,13 +1,15 @@
 
 import os
 import utils
+import branch as branches
 
 def init(context):
-    context.register_command('init', command_init, help='Initialize a new Armory repository')
+    parser = context.register_command('init', command_init, help='Initialize a new Armory repository')
+    parser.add_argument('--branches', '-b', default=['main'], nargs='*', help='initialize with the following branches')
     
 def command_init(args, context):
     if not utils.confirm("Initialize repository in "+args.directory):
-        print "Skipping initalization"
+        print "ok, skipping repository initialization"
         return None
         
     if not os.path.exists(args.directory):
@@ -22,8 +24,14 @@ def command_init(args, context):
     if not os.path.exists(args.directory+'packages'+os.sep):
         os.makedirs(args.directory+'packages'+os.sep)
         
-    with open(args.directory+'ARMORY', 'a'):
-        os.utime(args.directory+'ARMORY', None)
+    if not os.path.exists(args.directory+'.armory'+os.sep):
+        os.makedirs(args.directory+'.armory'+os.sep)
+        
+    for branch in args.branches:
+        branches.create_branch(context, branch)
+        
+    #with open(args.directory+'ARMORY', 'a'):
+    #    os.utime(args.directory+'ARMORY', None)
     
         
     pass
