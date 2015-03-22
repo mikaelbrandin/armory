@@ -103,7 +103,7 @@ def package_module(args, context, module):
         pack.add(tmp_metainfo, 'METAINF')
     
     #Copy file to cwd or argument --file destination
-    dest = os.getcwd()+os.sep+module.name+'-'+version+'.pack' 
+    dest = os.getcwd()+os.sep+module.name+'-'+version+'.pack'
     if 'file' in args and args.file != None:
         dest = args.file
         

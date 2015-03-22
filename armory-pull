@@ -47,6 +47,12 @@ def pull_module(module, version):
         debug("missing pack="+pack)
         sys.exit(1);
     
+def pull_branch(branch):
+    if os.path.exists(branch):
+        proc.write_file(sys.stdout, branch, 0)
+    else:
+        debug("missing branch="+branch)
+        sys.exit(1)
     
 
 while True:
@@ -73,5 +79,7 @@ for req in outgoing:
     
     if path[0] == 'modules':
         pull_module(path[1], path[2])
+    elif path[0] == 'branch':
+        pull_branch(path[1])
         
     debug(str(path))

@@ -20,14 +20,14 @@ def sizeof_fmt(num, suffix='B'):
 def command_status(args, context):
     modules = context.modules.from_context(context)
 
-    context.check_directories()
-
     if len(args.modules) == 0 or (len(args.modules) == 1 and args.modules[0] == 'all'):
         args.modules = modules.keys()
 
     print "================================"
-    print "Environment: " + context.environment
-    print " Repository: " + context.home_directory
+    print " Environment: " + context.environment
+    print "  Repository: " + context.home_directory
+    print "   Directory: " + args.directory
+    print "        User: " + context.user_directory
     print "================================"
 
     for mod in args.modules:

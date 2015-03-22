@@ -8,5 +8,3 @@ def create(uri):
         return ssh.Client(uri)
     elif uri.startswith('file://'):
         return file.Client(uri);
-        
-

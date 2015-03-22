@@ -44,7 +44,7 @@ def pull(name, repository_uri, context, args):
     client = clients.create(repository_uri);
     
     package = context.db_directory+'/'+name+'-latest.pack'
-    client.pull(name, 'latest', package)
+    client.pull('modules', name, 'latest', package)
     
     return package
     

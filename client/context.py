@@ -39,33 +39,28 @@ def is_armory_repository_dir(dir):
         return False
 
     return True
-
-
-class ReadWriteRepositoryDirectory(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        prospective_dir = values
-
-        if not prospective_dir.endswith(os.sep):
-            prospective_dir += os.sep
-
-        if is_armory_repository_dir(prospective_dir):
-            setattr(namespace, self.dest, prospective_dir)
-        else:
-            raise argparse.ArgumentError(self, "ReadWriteRepositoryDirectory:{0} is not a armoery directory directory".format(prospective_dir))
-
+    
+def root_path():
+    os.path.abspath(os.sep)
 
 class Context:
     def __init__(self):
         self.modules = Modules()
         self.home_directory = os.getcwd() + os.sep
 
-        self.initialize_global_configuration()
-
         if not self.home_directory.endswith(os.sep):
             self.home_directory += os.sep
 
         self.db_directory = self.home_directory + '.armory' + os.sep
+        
+        self.branch = ConfigParser.SafeConfigParser()
         self.config = ConfigParser.SafeConfigParser()
+        self.user = ConfigParser.SafeConfigParser()
+        
+        self.user_directory = os.path.expanduser('~' + os.getlogin()) + os.sep
+        if os.path.exists(self.user_directory + '.armory'):
+            self.user.read(self.user_directory + '.armory')
+        
         self.environment = 'dev'
         self.env = {
             'ARMORY_ENV': self.environment,
@@ -75,7 +70,7 @@ class Context:
         self.args_parser = argparse.ArgumentParser(prog='Armory')
         self.args_parser.add_argument('--debug', action='store_true', help='Enable debugging (mainly)')
         self.args_parser.add_argument('--environment', metavar='ENV', help='use ENV as current environment')
-        self.args_parser.add_argument('--directory', metavar='FILE', action=ReadWriteRepositoryDirectory, default=self.home_directory)
+        self.args_parser.add_argument('--directory', metavar='DIRECTORY', default=os.getcwd()+os.sep)
         self.sub_args_parsers = self.args_parser.add_subparsers(title='Armory commands', description='The commands available with Armory', help='Available Armory commmands')
 
     def register_command(self, cmd, command, **kwargs):
@@ -86,27 +81,7 @@ class Context:
         parser.set_defaults(command=command, directory_filter=kwargs.get('directory_filter'))
 
         return parser
-
-    def initialize_global_configuration(self):
-        conf = ConfigParser.SafeConfigParser()
-        home_dir = os.path.expanduser('~' + os.getlogin())
-
-        if os.path.exists(home_dir + '/.armory'):
-            conf.read(home_dir + '/.armory')
-
-        if not is_armory_repository_dir(self.home_directory):
-            if conf.has_option('profile', 'home') and is_armory_repository_dir(conf.get('profile', 'home')):
-
-                dir = conf.get('profile', 'home')
-                if not dir.endswith(os.sep):
-                    dir += os.sep
-
-                self.home_directory = dir
-            elif 'ARMORY_HOME' in os.environ and is_armory_repository_dir(os.environ.get('ARMORY_HOME')):
-                self.home_directory = os.environ.get('ARMORY_HOME')
-
-        return conf
-
+        
     def execute(self):
         args = self.args_parser.parse_args()
 
@@ -116,28 +91,45 @@ class Context:
         if not args.directory.endswith(os.sep):
             args.directory += os.sep
 
-        self.home_directory = args.directory
+        self.home_directory = self.resolve_home_dir(args.directory)
         self.db_directory = args.directory + '.armory' + os.sep
         
-        self.db = ConfigParser.SafeConfigParser()
-        self.db.read(self.db_directory+'DB')
+        self.config.read(self.db_directory+'config')
         
         if not args.environment is None:
             self.environment = args.environment
-        elif self.db.has_option('environment', 'default'):
-            self.environment = self.db.get('environment', 'default')
+        elif self.config.has_option('environment', 'default'):
+            self.environment = self.config.get('environment', 'default')
             
-        self.config_file = self.home_directory + self.environment+'.armory'
-        self.config.read(self.config_file)
+        self.branch_file = self.home_directory + self.environment+'.armory'
+        self.branch.read(self.branch_file)
 
-        if self.config.has_section('environment'):
-            for (key, value) in self.config.items('environment'):
+        if self.branch.has_section('environment'):
+            for (key, value) in self.branch.items('environment'):
                 self.env['ARMORY_' + key.upper()] = value
 
         self.env['ARMORY_HOME'] = self.home_directory
 
         args.command(args, self)
         return None
+        
+    def resolve_home_dir(self, directory):
+        dir = directory
+        root = root_path()
+        
+        while not is_armory_repository_dir(dir) and not dir == root:
+            dir = os.path.dirname(dir)
+        
+        if not is_armory_repository_dir(directory):
+            #FIXME: Should be changed to 'user' rather than 'profile'
+            if self.user.has_option('profile', 'home') and is_armory_repository_dir(self.user.get('profile', 'home')):
+                dir = self.user.get('profile', 'home')
+            elif 'ARMORY_HOME' in os.environ and is_armory_repository_dir(os.environ.get('ARMORY_HOME')):
+                dir = os.environ.get('ARMORY_HOME')
+    
+        if not dir.endswith(os.sep):
+                    dir += os.sep
+        return dir
 
     def check_directories(self):
         pass
@@ -251,11 +243,13 @@ class Modules:
 
     def from_context(self, context):
         modules = {}
-
         try:
-            for subdirectory in os.listdir(context.get_modules_directory()):
-                modules[subdirectory] = self.get(context, subdirectory)
+            dir = context.get_modules_directory()
+            for subdirectory in os.listdir(dir):    
+                if os.path.isdir(dir+subdirectory):
+                    modules[subdirectory] = self.get(context, subdirectory)
         except:
+            print "Unable to list modules in "+context.get_modules_directory()
             return modules
 
         return modules

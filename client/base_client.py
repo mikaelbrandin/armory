@@ -15,7 +15,10 @@ class BaseClient:
     def push(self, package_name, pack_file, hash):
         pass;
         
-    def pull(self):
+    def pull(self, module, version, dst):
+        pass;
+    
+    def pull_branch(self, branch_name, home_directory):
         pass;
 
         
@@ -63,6 +66,32 @@ class IOClient(BaseClient):
         
         self.cleanup();
         pass;
+        
+    def pull_branch(self, branch_name, home_directory):
+        shell = self.connect(self.uri, 'pull')
+        
+        if shell is None:
+            raise ClientException("unable to create shell");
+                
+        shell.write_msg("pull /branch/" + branch_name);
+        shell.write_msg("ok");
+
+        msg = shell.read_msg();
+        if msg.msg == 'accept':
+            shell.read_file(home_directory + branch_name, 0)
+            shell.wait()
+            return True
+        elif msg.msg == 'reject':
+            print "reject: "+module
+            return False
+        elif msg.msg == 'error':
+            print "error: "+str(msg)
+            return False
+        else:
+            print "unknown response: "+str(msg)
+            return False
+            
+        return True
         
     def pull(self, module, version, dst):
         shell = self.connect(self.uri, 'pull')
