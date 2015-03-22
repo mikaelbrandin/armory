@@ -122,12 +122,13 @@ class Context:
         self.db = ConfigParser.SafeConfigParser()
         self.db.read(self.db_directory+'DB')
         
-        if 'environment' in args:
+        if not args.environment is None:
             self.environment = args.environment
         elif self.db.has_option('environment', 'default'):
             self.environment = self.db.get('environment', 'default')
-
-        self.config.read(self.home_directory+self.environment+'.armory')
+            
+        self.config_file = self.home_directory + self.environment+'.armory'
+        self.config.read(self.config_file)
 
         if self.config.has_section('environment'):
             for (key, value) in self.config.items('environment'):
