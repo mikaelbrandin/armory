@@ -31,42 +31,41 @@ def hash_file(file_path):
     return hasher.hexdigest()
 
 
-def read_file(file):
-    with open(file, 'r') as f:
-        return f.read();
+def read_file(filename):
+    with open(filename, 'r') as f:
+        return f.read()
 
 
-def build_modules(context, names=[], **kwargs):
+def build_modules(context, module_names=[], **kwargs):
     modules = context.modules.from_context(context)
 
-    if len(names) > 0 and not (len(names) == 1 and names[0] == 'all'):
-        return modules, names
+    if len(module_names) > 0 and not (len(module_names) == 1 and module_names[0] == 'all'):
+        return modules, module_names
 
     if context.branch.has_section(context.environment):
-        included = []
-        seen = []
+        _included = []
+        _seen = []
         for (key, value) in context.branch.items(context.environment):
             val = str(value).lower().strip()
             if val == 'true':
-                included.append(key)
-            else:
-                print "Ignoring " + key + " in " + context.environment
+                _included.append(key)
 
-            seen.append(key)
+            _seen.append(key)
 
         for key in modules.keys():
-            if key in seen:
+
+            if key in _seen:
                 continue
             else:
-                included.append(key)
+                _included.append(key)
 
-        return modules, included
+        return modules, _included
     else:
-        return modules, all
+        return modules, modules.keys()
 
 
 def confirm(msg):
-    if os.environ.has_key('ARMORY_YES') and os.environ['ARMORY_YES'] == 'YES':
+    if 'ARMORY_YES' in os.environ and os.environ['ARMORY_YES'] == 'YES':
         return True
     else:
         yesno = raw_input(msg + ": (yes/no)? ")

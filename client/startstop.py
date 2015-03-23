@@ -6,7 +6,6 @@ import sys
 import pwd
 
 import exceptions
-
 import utils
 
 
@@ -49,11 +48,17 @@ def command_start(args, context):
             pw = pwd.getpwnam(module.run_as_user)
             override_uid = pw.pw_uid
             override_gid = pw.pw_gid
-            start(args, context, module, override_uid, override_gid)
+            try:
+                start(args, context, module, override_uid, override_gid)
+            except exceptions.ArmoryException as e:
+                e.print_message()
         else:
-            start(args, context, module, uid, gid)
+            try:
+                start(args, context, module, uid, gid)
+            except exceptions.ArmoryException as e:
+                e.print_message()
 
-        return None
+    return None
 
 
 def command_stop(args, context):
@@ -85,7 +90,7 @@ def start(args, context, module, uid, gid):
     # TODO: Check that process id is active!
 
     if len(pids) > 0:
-        print module.name + " already started"
+        print module.name + " [running]"
         return True
 
     print "starting " + module.name
@@ -107,7 +112,7 @@ def start(args, context, module, uid, gid):
 
 
 def start_with_runscript(args, context, module, env, uid, gid):
-    proc = subprocess.Popen(
+    _proc = subprocess.Popen(
         ['nohup', module.module_directory + 'start'],
         env=env,
         stdout=sys.stdout,
@@ -118,9 +123,9 @@ def start_with_runscript(args, context, module, env, uid, gid):
     if not os.path.exists(context.db_directory + 'run' + os.sep):
         os.makedirs(context.db_directory + 'run' + os.sep)
 
-    print "run pid={pid}".format(pid=proc.pid)
+    # print "run pid={pid}".format(pid=_proc.pid)
     with open(context.db_directory + 'run' + os.sep + module.name + '.pid', "w+") as pidfile:
-        pidfile.write(str(proc.pid))
+        pidfile.write(str(_proc.pid))
 
 
 def start_with_startscript(args, context, module, env, uid, gid):
@@ -131,14 +136,14 @@ def start_with_startscript(args, context, module, env, uid, gid):
         stderr=sys.stderr,
         preexec_fn=demote(uid, gid)
     )
-    print "start pid={pid}".format(pid=proc.pid)
+    # print "start pid={pid}".format(pid=proc.pid)
 
 
 def stop(args, context, module):
     pids = module.get_processes()
 
     if len(pids) == 0:
-        print module.name + " not running"
+        print module.name + " [stopped]"
         return True
 
     if not os.path.exists(module.module_directory + '/stop'):
@@ -151,14 +156,14 @@ def stop(args, context, module):
     env['ARMORY_MODULE_CONF_DIRECTORY'] = context.get_config_directory(module.name, env['ARMORY_ENV'])
 
     if os.path.exists(context.db_directory + 'run' + os.sep + module.name + '.pid'):
-        print "stopping (pid)" + module.name
+        print  module.name + "[stopping]"
         with open(context.db_directory + 'run' + os.sep + module.name + '.pid', 'r') as pidfile:
             pid = int(pidfile.read())
             os.kill(pid)
 
         os.remove(context.db_directory + 'run' + os.sep + module.name + '.pid')
     elif os.path.exists(module.module_directory + 'stop'):
-        print "stopping (stop-script) " + module.name
+        print module.name + "[stopping]"
         subprocess.call(module.module_directory + 'stop', env=env)
     else:
         raise StopException("Missing stop scripts")

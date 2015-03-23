@@ -3,10 +3,16 @@ __author__ = 'kra869'
 import argparse
 import os
 import os.path
-import glob
 import ConfigParser
 
+import exceptions
+
 import utils
+
+
+class ModuleException(exceptions.ArmoryException):
+    def __init__(self, msg):
+        super(ModuleException, self).__init__(msg)
 
 
 class ReadWriteDirectory(argparse.Action):
@@ -39,9 +45,11 @@ def is_armory_repository_dir(dir):
         return False
 
     return True
-    
+
+
 def root_path():
-    os.path.abspath(os.sep)
+    return os.path.abspath(os.sep)
+
 
 class Context:
     def __init__(self):
@@ -52,15 +60,16 @@ class Context:
             self.home_directory += os.sep
 
         self.db_directory = self.home_directory + '.armory' + os.sep
-        
+        self.branch_file = None
+
         self.branch = ConfigParser.SafeConfigParser()
         self.config = ConfigParser.SafeConfigParser()
         self.user = ConfigParser.SafeConfigParser()
-        
+
         self.user_directory = os.path.expanduser('~' + os.getlogin()) + os.sep
         if os.path.exists(self.user_directory + '.armory'):
             self.user.read(self.user_directory + '.armory')
-        
+
         self.environment = 'dev'
         self.env = {
             'ARMORY_ENV': self.environment,
@@ -70,7 +79,7 @@ class Context:
         self.args_parser = argparse.ArgumentParser(prog='Armory')
         self.args_parser.add_argument('--debug', action='store_true', help='Enable debugging (mainly)')
         self.args_parser.add_argument('--environment', metavar='ENV', help='use ENV as current environment')
-        self.args_parser.add_argument('--directory', metavar='DIRECTORY', default=os.getcwd()+os.sep)
+        self.args_parser.add_argument('--directory', metavar='DIRECTORY', default=os.getcwd() + os.sep)
         self.sub_args_parsers = self.args_parser.add_subparsers(title='Armory commands', description='The commands available with Armory', help='Available Armory commmands')
 
     def register_command(self, cmd, command, **kwargs):
@@ -81,27 +90,27 @@ class Context:
         parser.set_defaults(command=command, directory_filter=kwargs.get('directory_filter'))
 
         return parser
-        
+
     def execute(self):
-        args = self.args_parser.parse_args()
+        _args = self.args_parser.parse_args()
 
-        if args.directory_filter:
-            args.directory = args.directory_filter(args);
+        if _args.directory_filter:
+            _args.directory = _args.directory_filter(_args);
 
-        if not args.directory.endswith(os.sep):
-            args.directory += os.sep
+        if not _args.directory.endswith(os.sep):
+            _args.directory += os.sep
 
-        self.home_directory = self.resolve_home_dir(args.directory)
-        self.db_directory = args.directory + '.armory' + os.sep
-        
-        self.config.read(self.db_directory+'config')
-        
-        if not args.environment is None:
-            self.environment = args.environment
+        self.home_directory = self.resolve_home_dir(_args.directory)
+        self.db_directory = _args.directory + '.armory' + os.sep
+
+        self.config.read(self.db_directory + 'config')
+
+        if _args.environment is not None:
+            self.environment = _args.environment
         elif self.config.has_option('environment', 'default'):
             self.environment = self.config.get('environment', 'default')
-            
-        self.branch_file = self.home_directory + self.environment+'.armory'
+
+        self.branch_file = self.home_directory + self.environment + '.armory'
         self.branch.read(self.branch_file)
 
         if self.branch.has_section('environment'):
@@ -110,32 +119,32 @@ class Context:
 
         self.env['ARMORY_HOME'] = self.home_directory
 
-        args.command(args, self)
+        _args.command(_args, self)
         return None
-        
+
     def resolve_home_dir(self, directory):
-        dir = directory
-        root = root_path()
-        
-        while not is_armory_repository_dir(dir) and not dir == root:
-            dir = os.path.dirname(dir)
-        
+        _dir = directory
+        _root = root_path()
+
+        while not is_armory_repository_dir(_dir) and not _dir == _root:
+            _dir = os.path.dirname(_dir)
+
         if not is_armory_repository_dir(directory):
-            #FIXME: Should be changed to 'user' rather than 'profile'
+            # FIXME: Should be changed to 'user' rather than 'profile'
             if self.user.has_option('profile', 'home') and is_armory_repository_dir(self.user.get('profile', 'home')):
-                dir = self.user.get('profile', 'home')
+                _dir = self.user.get('profile', 'home')
             elif 'ARMORY_HOME' in os.environ and is_armory_repository_dir(os.environ.get('ARMORY_HOME')):
-                dir = os.environ.get('ARMORY_HOME')
-    
-        if not dir.endswith(os.sep):
-                    dir += os.sep
-        return dir
+                _dir = os.environ.get('ARMORY_HOME')
+
+        if not _dir.endswith(os.sep):
+            _dir += os.sep
+        return _dir
 
     def check_directories(self):
         pass
 
-    def get_module_directory(self, module_name):
-        return self.home_directory + 'modules.d' + os.sep + module_name + '/'
+    def get_module_directory(self, module_name, version):
+        return self.home_directory + 'modules.d' + os.sep + module_name + os.sep + version + os.sep
 
     def get_modules_directory(self):
         return self.home_directory + 'modules.d' + os.sep
@@ -147,15 +156,14 @@ class Context:
 class Module:
     MAX_SHORT_DESC_LENGTH = 50
 
-    def __init__(self, module_directory, context):
-
-        if not os.path.isdir(module_directory):
-            raise NotImplementedError()
-
+    def __init__(self, module_name, module_directory, context):
         self.context = context
 
         self.module_directory = module_directory
-        self.name = os.path.basename(module_directory[:-1])
+        self.name = module_name
+
+        if not os.path.exists(module_directory + self.name + '.info'):
+            raise ModuleException("Not an valid module: missing .info file in " + module_directory)
 
         self.friendly_name = self.name
         self.module_info_file = self.module_directory + self.name + '.info'
@@ -195,18 +203,16 @@ class Module:
         else:
             return val
 
-
     def get_processes(self):
 
         if os.path.exists(self.context.db_directory + 'run/' + self.name + '.pid'):
-            pid = False
-            with open(self.context.db_directory + 'run/' + self.name + '.pid', 'r') as pidfile:
-                pid = int(pidfile.read())
+            _pid = False
+            with open(self.context.db_directory + 'run/' + self.name + '.pid', 'r') as pid_file:
+                _pid = int(pid_file.read())
 
-            if pid and os.path.exists('/proc/' + str(pid)):
-                return [pid]
+            if _pid and os.path.exists('/proc/' + str(_pid)):
+                return [_pid]
             else:
-                print "Non-existing pid=" + str(pid)
                 return []
 
         elif os.path.exists(self.module_directory + 'ps'):
@@ -237,19 +243,21 @@ class Modules:
     def __init__(self):
         pass
 
-
-    def get(self, context, module_name):
-        return Module(context.get_module_directory(module_name), context)
+    def get(self, context, module_name, version):
+        return Module(module_name, context.get_module_directory(module_name, version), context)
 
     def from_context(self, context):
         modules = {}
-        try:
-            dir = context.get_modules_directory()
-            for subdirectory in os.listdir(dir):    
-                if os.path.isdir(dir+subdirectory):
-                    modules[subdirectory] = self.get(context, subdirectory)
-        except:
-            print "Unable to list modules in "+context.get_modules_directory()
-            return modules
+        # try:
+        _dir = context.get_modules_directory()
+        for module_name in os.listdir(_dir):
+            if os.path.isdir(_dir + module_name):
+                try:
+                    modules[module_name] = self.get(context, module_name, 'latest')
+                except ModuleException:
+                    print "Broken module: " + module_name
+        # except BaseException as e:
+        # print "Unable to list modules in " + context.get_modules_directory()
+        # return modules
 
         return modules

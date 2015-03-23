@@ -23,12 +23,12 @@ def command_status(args, context):
     if len(args.modules) == 0 or (len(args.modules) == 1 and args.modules[0] == 'all'):
         args.modules = modules.keys()
 
-    print "================================"
+    print "-----"
     print " Environment: " + context.environment
     print "  Repository: " + context.home_directory
     print "   Directory: " + args.directory
     print "        User: " + context.user_directory
-    print "================================"
+    print "-----"
 
     for mod in args.modules:
         display_status(args, context, modules[mod])
@@ -36,15 +36,18 @@ def command_status(args, context):
     return None
 
 
+def fill_width(n):
+    print '=' * n
+
+
 def display_status(args, context, module):
     pids = module.get_processes()
 
     stat = 'stopped'
     if len(pids) > 0:
-        stat = 'running with ' + str(len(pids)) + ' processes'
+        stat = 'running'
 
-    print module.name
-    print "[{status}]".format(status=stat)
+    print "{name:30} [{status}]".format(name=module.name + "-" + module.version, version=module.version, status=stat)
     for pid in pids:
         if pid == -1:
             continue
@@ -54,9 +57,9 @@ def display_status(args, context, module):
             continue
 
         stat = open('/proc/' + str(pid) + '/stat', 'r').read().split()
-        memstat = open('/proc/' + str(pid) + '/statm', 'r').read().split()
+        # memstat = open('/proc/' + str(pid) + '/statm', 'r').read().split()
+        # total_mem=sizeof_fmt(int(memstat[0]), 'B')
+        print "  {pid} {name:10}".format(pid=pid, name=stat[1].strip())
 
-        print "{pid:10} {name:10} {total_mem:10}".format(pid=pid, name=stat[1], total_mem=sizeof_fmt(int(memstat[0]), 'B'))
-
-    print ""
+    print "---"
     pass
