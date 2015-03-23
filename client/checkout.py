@@ -3,6 +3,7 @@ import urlparse
 import clients
 import os
 import clients
+import exceptions
 
 class CheckoutException(exceptions.ArmoryException):
     def __init__(self, msg):

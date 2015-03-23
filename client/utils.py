@@ -42,10 +42,10 @@ def build_modules(context, names=[], **kwargs):
     if len(names) > 0 and not (len(names) == 1 and names[0] == 'all'):
         return modules, names
 
-    if context.config.has_section(context.environment):
+    if context.branch.has_section(context.environment):
         included = []
         seen = []
-        for (key, value) in context.config.items(context.environment):
+        for (key, value) in context.branch.items(context.environment):
             val = str(value).lower().strip()
             if val == 'true':
                 included.append(key)
