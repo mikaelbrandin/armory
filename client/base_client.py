@@ -1,10 +1,10 @@
 __author__ = 'mikael.brandin@devolver.se'
 
 import os
-import urlparse
+import urllib.parse
 import subprocess
-import exceptions
-import protocol
+from client import exceptions
+from client import protocol
 
 class ClientException(exceptions.ArmoryException):
     def __init__(self, msg):
@@ -25,7 +25,7 @@ class BaseClient:
 class IOClient(BaseClient):
 
     def __init__(self, uri):
-        self.uri = urlparse.urlparse(uri)
+        self.uri = urllib.parse.parse(uri)
 
     def connect(self, uri, feature):
         return None
@@ -49,18 +49,18 @@ class IOClient(BaseClient):
         msg = shell.read_msg();
 
         if msg.msg == 'accept':
-            print "accept: "+package_name
+            print("accept: "+package_name)
             shell.write_file(pack_file, hash)
             shell.wait()
             return None
         elif msg.msg == 'reject':
-            print "reject: " + package_name
+            print("reject: " + package_name)
             return None
         elif msg.msg == 'error':
-            print "error: " + package_name + " " + str(msg.params)
+            print("error: " + package_name + " " + str(msg.params))
             return None
         else:
-            print "unknown response: "+str(msg)
+            print("unknown response: "+str(msg))
             return None
         
         
@@ -82,13 +82,13 @@ class IOClient(BaseClient):
             shell.wait()
             return True
         elif msg.msg == 'reject':
-            print "reject: "+module
+            print("reject: "+module)
             return False
         elif msg.msg == 'error':
-            print "error: "+str(msg)
+            print("error: "+str(msg))
             return False
         else:
-            print "unknown response: "+str(msg)
+            print("unknown response: "+str(msg))
             return False
             
         return True
@@ -108,13 +108,13 @@ class IOClient(BaseClient):
             shell.wait()
             return None
         elif msg.msg == 'reject':
-            print "reject: "+module
+            print("reject: "+module)
             return None
         elif msg.msg == 'error':
-            print "error: "+str(msg)
+            print("error: "+str(msg))
             return None
         else:
-            print "unknown response: "+str(msg)
+            print("unknown response: "+str(msg))
             return None
     
         pass;

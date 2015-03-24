@@ -1,7 +1,7 @@
 __author__ = 'kra869'
 
-import ssh_client as ssh
-import file_client as file
+from . import ssh_client as ssh
+from . import file_client as file
 
 def create(uri):
     if uri.startswith('ssh://'):

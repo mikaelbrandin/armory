@@ -1,9 +1,9 @@
 
-import urlparse
-import clients
+import urllib.parse
+from . import clients
 import os
-import clients
-import exceptions
+from . import clients
+from . import exceptions
 
 class CheckoutException(exceptions.ArmoryException):
     def __init__(self, msg):
@@ -11,18 +11,18 @@ class CheckoutException(exceptions.ArmoryException):
 
 
 def init(context):
-    parser = context.register_command('checkout', command_checkout, help='Checkout a repository branch to follow locally.')
+    parser = context.register_command('checkout', command_checkout, aliases=['co'], help='Checkout a repository branch to follow locally.')
     parser.add_argument('repository', metavar='URI', help='repository to checkout from')
     
 def command_checkout(args, context):
     
-    uri = urlparse.urlparse(args.repository)
+    uri = urllib.parse.urlparse(args.repository)
     
     directory = os.path.dirname(uri.path)
     branch = os.path.basename(uri.path)    
     repository = uri.scheme + '://' + uri.netloc + directory
 
-    print "checkout "+branch+ " from "+repository
+    print("checkout "+branch+ " from "+repository)
     checkout(repository, branch)
     
 def checkout(repository, branch):

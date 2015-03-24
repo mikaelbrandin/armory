@@ -5,8 +5,8 @@ import subprocess
 import sys
 import pwd
 
-import exceptions
-import utils
+from . import exceptions
+from . import utils
 
 
 class StartException(exceptions.ArmoryException):
@@ -90,10 +90,10 @@ def start(args, context, module, uid, gid):
     # TODO: Check that process id is active!
 
     if len(pids) > 0:
-        print module.name + " [running]"
+        print(module.name + " [running]")
         return True
 
-    print "starting " + module.name
+    print("starting " + module.name)
 
     env = os.environ.copy()
     env.update(context.env)
@@ -143,11 +143,11 @@ def stop(args, context, module):
     pids = module.get_processes()
 
     if len(pids) == 0:
-        print module.name + " [stopped]"
+        print(module.name + " [stopped]")
         return True
 
     if not os.path.exists(module.module_directory + '/stop'):
-        print "Unable to stop " + module.name + " no stop script"
+        print("Unable to stop " + module.name + " no stop script")
         return False
 
     env = os.environ.copy()
@@ -156,14 +156,14 @@ def stop(args, context, module):
     env['ARMORY_MODULE_CONF_DIRECTORY'] = context.get_config_directory(module.name, env['ARMORY_ENV'])
 
     if os.path.exists(context.db_directory + 'run' + os.sep + module.name + '.pid'):
-        print  module.name + "[stopping]"
+        print(module.name + "[stopping]")
         with open(context.db_directory + 'run' + os.sep + module.name + '.pid', 'r') as pidfile:
             pid = int(pidfile.read())
             os.kill(pid)
 
         os.remove(context.db_directory + 'run' + os.sep + module.name + '.pid')
     elif os.path.exists(module.module_directory + 'stop'):
-        print module.name + "[stopping]"
+        print(module.name + "[stopping]")
         subprocess.call(module.module_directory + 'stop', env=env)
     else:
         raise StopException("Missing stop scripts")

@@ -1,15 +1,17 @@
-﻿__author__ = 'kra869'
+__author__ = 'kra869'
 
 import hashlib
 import os
-import utils
+from . import utils
 import tarfile
 import shutil
-import ConfigParser
+import configparser
 import datetime
-import context as ctx
+from . import modules
+from . import configurations
 import tempfile
 import sys
+import glob
 
 class PackageException(BaseException):
     def __init__(self, msg):
@@ -29,33 +31,108 @@ def command_package(args, context):
     modules = context.modules.from_context(context)
     
     for src in args.sources:
+        
         if src in modules:
             package_module(args, context, modules[src])
         elif os.path.exists(src) and os.path.isdir(src):
             if not src.endswith(os.sep):
                 src = src + os.sep
+            dir = src
+            
+            for file in glob.glob(dir +'*.info'):
+                info = configparser.SafeConfigParser()
+                info.read(file)
                 
-            module = ctx.Module(src, context)
-            package_module(args, context, module)
+                name = os.path.splitext(os.path.basename(file))[0]
+                
+                if info.has_option("general", "type") and info.get('general', 'type') == 'configuration':
+                    package_config(args, name, info, configurations.Configuration(name, dir, context))
+                else:
+                    package_module(args, name, info, modules.Module(name, dir, context))
+            
+            #module = 
+            #package_module(args, context, module)
         else:
             raise PackageException("Missing source, nothing to package")
             
     
     #for mod_name in included:
     #    commit(args, context, modules[mod_name])
+
+def package_config(args, context, info, config):
+
+    version = info.get('general', 'version')
+    if not info.has_option('general', 'version'):
+        raise PackageException('No version, please provide a valid version tag in config .info file for '+config.name)
     
     
-def package_module(args, context, module):
+    print(config.name + "("+version+") from " + config.conf_directory)
     
-    #Read module .info file
-    info = ConfigParser.SafeConfigParser()
-    info.read(module.module_info_file)
+    #Create temporary directory
+    dir = tempfile.mkdtemp('am-package') + os.sep
     
+    if not os.path.exists(dir):
+        os.makedirs(dir);
+
+    tmp_pack = dir+config.name+'.pack'
+    tmp_manifest = dir+'MANIFEST'
+    tmp_metainfo = dir+'METAINF'
+    
+    #Create MANIFEST
+    package_hash = hashlib.sha1()
+    with open(tmp_manifest, 'w+') as manifest:
+        for root, dirs, files in os.walk(config.conf_directory, topdown=False):
+            for name in files:
+                f = os.path.join(root, name)
+                rel = os.path.relpath(f, config.conf_directory)
+                hv = utils.hash_file(f)
+                print(hv + "\t" + rel)
+                package_hash.update(rel + " sha1 " + hv)
+                manifest.write(rel + " sha1 " + hv+"\n")
+
+    package_hash = package_hash.hexdigest();
+    
+    #Create METAINF
+    metainfo = configparser.SafeConfigParser()
+    metainfo.add_section('meta')
+    metainfo.set('meta', 'name', module.name)
+    metainfo.set('meta', 'friendly_name', module.friendly_name)
+    metainfo.set('meta', 'hash', package_hash)
+    metainfo.set('meta', 'hash_type', 'sha1')
+    metainfo.set('meta', 'package_type', 'configuration')
+    metainfo.set('meta', 'built', str(datetime.datetime.now()))
+    metainfo.set('meta', 'built_by', os.getlogin())
+    metainfo.set('meta', 'version', version);
+    with open(tmp_metainfo, 'w+') as f:
+        metainfo.write(f)
+    
+    #Last create .pack file in temporary dir
+    with tarfile.open(tmp_pack, 'w') as pack:
+        for entry in os.listdir(module.module_directory):
+            pack.add(module.module_directory+entry, arcname=entry)
+        pack.add(tmp_manifest, 'MANIFEST')
+        pack.add(tmp_metainfo, 'METAINF')
+    
+    #Copy file to cwd or argument --file destination
+    dest = os.getcwd()+os.sep+module.name+'-'+version+'.pack'
+    if 'file' in args and args.file != None:
+        dest = args.file
+        
+    shutil.copyfile(tmp_pack, dest)
+
+    #Remove temporary dir
+    shutil.rmtree(dir)
+    
+    pass    
+    
+def package_module(args, context, info, module):
+
     version = info.get('general', 'version')
     if not info.has_option('general', 'version'):
         raise PackageException('No version, please provide a valid version tag in module .info file for '+module.name)
     
-    print module.name + "("+version+") from " + module.module_directory
+    
+    print(module.name + "("+version+") from " + module.module_directory)
     
     #Create temporary directory
     dir = tempfile.mkdtemp('am-package') + os.sep
@@ -75,14 +152,14 @@ def package_module(args, context, module):
                 f = os.path.join(root, name)
                 rel = os.path.relpath(f, module.module_directory)
                 hv = utils.hash_file(f)
-                print hv + "\t" + rel
+                print(hv + "\t" + rel)
                 package_hash.update(rel + " sha1 " + hv)
                 manifest.write(rel + " sha1 " + hv+"\n")
 
     package_hash = package_hash.hexdigest();
     
     #Create METAINF
-    metainfo = ConfigParser.SafeConfigParser()
+    metainfo = configparser.SafeConfigParser()
     metainfo.add_section('meta')
     metainfo.set('meta', 'name', module.name)
     metainfo.set('meta', 'friendly_name', module.friendly_name)

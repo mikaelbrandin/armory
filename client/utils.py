@@ -2,12 +2,12 @@ __author__ = 'kra869'
 
 import subprocess
 import hashlib
-import urlparse
+import urllib.parse
 import os
 
 
 def register_scheme(scheme):
-    for method in filter(lambda s: s.startswith('uses_'), dir(urlparse)):
+    for method in [s for s in dir(urlparse) if s.startswith('uses_')]:
         getattr(urlparse, method).append(scheme)
 
 
@@ -52,7 +52,7 @@ def build_modules(context, module_names=[], **kwargs):
 
             _seen.append(key)
 
-        for key in modules.keys():
+        for key in list(modules.keys()):
 
             if key in _seen:
                 continue
@@ -61,14 +61,14 @@ def build_modules(context, module_names=[], **kwargs):
 
         return modules, _included
     else:
-        return modules, modules.keys()
+        return modules, list(modules.keys())
 
 
 def confirm(msg):
     if 'ARMORY_YES' in os.environ and os.environ['ARMORY_YES'] == 'YES':
         return True
     else:
-        yesno = raw_input(msg + ": (yes/no)? ")
+        yesno = input(msg + ": (yes/no)? ")
 
         if yesno in ['y', 'Y', 'yes', '1']:
             return True

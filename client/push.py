@@ -1,12 +1,12 @@
-import clients
-import utils
+from . import clients
+from . import utils
 import glob
 import os
 import shutil
-import ConfigParser
+import configparser
 import tempfile
 import tarfile
-import exceptions
+from . import exceptions
 
 class PushException(exceptions.ArmoryException):
     def __init__(self, msg):
@@ -44,7 +44,7 @@ def push(args, context, pack_file):
         pack.extract('MANIFEST', tmp_dir);
         pack.extract('METAINF', tmp_dir);
     
-    metainfo = ConfigParser.SafeConfigParser()
+    metainfo = configparser.SafeConfigParser()
     metainfo.read(tmp_metainfo)
     
     module_name = metainfo.get('meta', 'name');
@@ -65,7 +65,7 @@ def push(args, context, pack_file):
     #    repository_uri = repos.get('modules', module_name)
         
     
-    print module_name + "( "+ module_version  + " ) -> "+repository_uri
+    print(module_name + "( "+ module_version  + " ) -> "+repository_uri)
     client = clients.create(repository_uri)
     
     #Push file

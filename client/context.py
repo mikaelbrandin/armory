@@ -3,9 +3,9 @@ __author__ = 'kra869'
 import argparse
 import os
 import os.path
-import ConfigParser
+import configparser
 
-import modules as mods
+from . import modules as mods
 
 
 class ReadWriteDirectory(argparse.Action):
@@ -55,9 +55,9 @@ class Context:
         self.db_directory = self.home_directory + '.armory' + os.sep
         self.branch_file = None
 
-        self.branch = ConfigParser.SafeConfigParser()
-        self.config = ConfigParser.SafeConfigParser()
-        self.user = ConfigParser.SafeConfigParser()
+        self.branch = configparser.SafeConfigParser()
+        self.config = configparser.SafeConfigParser()
+        self.user = configparser.SafeConfigParser()
 
         self.user_directory = os.path.expanduser('~' + os.getlogin()) + os.sep
         if os.path.exists(self.user_directory + '.armory'):
@@ -78,8 +78,11 @@ class Context:
     def register_command(self, cmd, command, **kwargs):
         if kwargs.get('help') is None:
             kwargs['help'] = '<No Help Available>'
+            
+        if not 'aliases' in kwargs:
+            kwargs['aliases'] = []
 
-        parser = self.sub_args_parsers.add_parser(cmd, help=kwargs.get('help'))
+        parser = self.sub_args_parsers.add_parser(cmd, help=kwargs.get('help'), aliases=kwargs.get('aliases'))
         parser.set_defaults(command=command, directory_filter=kwargs.get('directory_filter'))
 
         return parser
@@ -135,6 +138,12 @@ class Context:
 
     def check_directories(self):
         pass
+        
+    def get_configs_directory(self):
+        return self.home_directory + 'conf.d' + os.sep
+        
+    def get_config_directory(self, conf, version):
+        return self.home_directory + 'conf.d' + os.sep + conf.module + os.sep + conf.branch + os.sep + version + os.sep
 
     def get_module_directory(self, module_name, version):
         return self.home_directory + 'modules.d' + os.sep + module_name + os.sep + version + os.sep

@@ -5,7 +5,7 @@ import struct
 import math
 import sys
 import os
-import urlparse
+import urllib.parse
 
 Message = namedtuple('Message', ['msg', 'params'])
 Push = namedtuple('Push', "package, hash");

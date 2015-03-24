@@ -4,7 +4,7 @@ import os
 
 
 def init(context):
-    parser = context.register_command('status', command_status, help='Show status information for one or more modules')
+    parser = context.register_command('status', command_status, aliases=['ps', 'stat'], help='Show status information for one or more modules')
     parser.add_argument('modules', metavar='MODULE', nargs='*')
     return None
 
@@ -21,14 +21,14 @@ def command_status(args, context):
     modules = context.modules.from_context(context)
 
     if len(args.modules) == 0 or (len(args.modules) == 1 and args.modules[0] == 'all'):
-        args.modules = modules.keys()
+        args.modules = list(modules.keys())
 
-    print "-----"
-    print " Environment: " + context.environment
-    print "  Repository: " + context.home_directory
-    print "   Directory: " + args.directory
-    print "        User: " + context.user_directory
-    print "-----"
+    print("-----")
+    print(" Environment: " + context.environment)
+    print("  Repository: " + context.home_directory)
+    print("   Directory: " + args.directory)
+    print("        User: " + context.user_directory)
+    print("-----")
 
     for mod in args.modules:
         display_status(args, context, modules[mod])
@@ -37,7 +37,7 @@ def command_status(args, context):
 
 
 def fill_width(n):
-    print '=' * n
+    print('=' * n)
 
 
 def display_status(args, context, module):
@@ -47,19 +47,19 @@ def display_status(args, context, module):
     if len(pids) > 0:
         stat = 'running'
 
-    print "{name:30} [{status}]".format(name=module.name + "-" + module.version, version=module.version, status=stat)
+    print("{name:30} [{status}]".format(name=module.name + "-" + module.version, version=module.version, status=stat))
     for pid in pids:
         if pid == -1:
             continue
 
         if not os.path.exists('/proc/' + str(pid)):
-            print str(pid) + " not found in /proc == dead pid"
+            print(str(pid) + " not found in /proc == dead pid")
             continue
 
         stat = open('/proc/' + str(pid) + '/stat', 'r').read().split()
         # memstat = open('/proc/' + str(pid) + '/statm', 'r').read().split()
         # total_mem=sizeof_fmt(int(memstat[0]), 'B')
-        print "  {pid} {name:10}".format(pid=pid, name=stat[1].strip())
+        print("  {pid} {name:10}".format(pid=pid, name=stat[1].strip()))
 
-    print "---"
+    print("---")
     pass

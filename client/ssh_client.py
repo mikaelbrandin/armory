@@ -1,6 +1,6 @@
 __author__ = 'kra869'
 
-import base_client
+from . import base_client
 import os
 import getpass
 import sys

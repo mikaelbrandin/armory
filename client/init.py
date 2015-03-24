@@ -1,8 +1,8 @@
 __author__ = 'kra869'
 
 import os
-import ConfigParser
-import utils
+import configparser
+from . import utils
 
 def directory_filter(args):
     return os.getcwd();
@@ -16,25 +16,25 @@ def init(context):
 def command_init(args, context):
     
     if not utils.confirm("Initialize repository in "+args.directory):
-        print "Skipping initalization of local repository"
+        print("Skipping initalization of local repository")
     
     db_directory = args.directory + '.armory'+os.sep
     modules_directory = args.directory + 'modules.d'+os.sep
     configuration_directory = args.directory + 'conf.d'+os.sep
     
     if not os.path.exists(db_directory):
-        print "Create .armory directory"
+        print("Create .armory directory")
         os.makedirs(db_directory)
         
     if not os.path.exists(modules_directory):
-        print "Create modules.d directory"
+        print("Create modules.d directory")
         os.makedirs(modules_directory)
         
     if not os.path.exists(configuration_directory):
-        print "Create conf.d directory"
+        print("Create conf.d directory")
         os.makedirs(configuration_directory)
         
-    repositories = ConfigParser.SafeConfigParser()
+    repositories = configparser.SafeConfigParser()
     repositories.read(db_directory+'repositories')
     
     #Modules

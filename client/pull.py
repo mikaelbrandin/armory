@@ -1,10 +1,10 @@
-import ConfigParser
+import configparser
 import tempfile
 import shutil
 import os
 import tarfile
 
-import clients
+from . import clients
 
 
 def init(context):
@@ -21,7 +21,7 @@ def init(context):
 def command_pull(args, context):
     repository_uri = args.repository
 
-    repositories = ConfigParser.SafeConfigParser()
+    repositories = configparser.SafeConfigParser()
     repositories.read(context.db_directory + 'repositories')
 
     if repository_uri is None:
@@ -56,7 +56,7 @@ def install(package_file, args, context):
     tmp_metainfo = tmp_dir + os.sep + 'METAINF'
     tmp_manifest = tmp_dir + os.sep + 'MANIFEST'
 
-    metainfo = ConfigParser.SafeConfigParser()
+    metainfo = configparser.SafeConfigParser()
 
     with tarfile.open(package_file, 'r') as package:
         package.extract('METAINF', tmp_dir)
@@ -72,11 +72,11 @@ def install(package_file, args, context):
     if not os.path.exists(module_dir):
         os.makedirs(module_dir)
     else:
-        print "Uninstalling " + name + "(same version) from " + module_dir
+        print("Uninstalling " + name + "(same version) from " + module_dir)
         shutil.rmtree(module_dir)
         os.makedirs(module_dir)
 
-    print "Install " + name + " " + version + " to " + module_dir
+    print("Install " + name + " " + version + " to " + module_dir)
 
     with tarfile.open(package_file, 'r') as package:
         package.extractall(module_dir)
@@ -84,7 +84,7 @@ def install(package_file, args, context):
     os.remove(module_dir + 'MANIFEST')
     os.remove(module_dir + 'METAINF')
 
-    print context.get_module_directory(name, 'latest') + " -> " + module_dir
+    print(context.get_module_directory(name, 'latest') + " -> " + module_dir)
 
     os.symlink(os.path.dirname(module_dir), os.path.dirname(context.get_module_directory(name, 'latest')))
 

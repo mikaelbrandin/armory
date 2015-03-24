@@ -6,4 +6,4 @@ class ArmoryException(BaseException):
         self.msg = msg
 
     def print_message(self):
-        print type(self).__name__ + ": " + self.msg
+        print(type(self).__name__ + ": " + self.msg)

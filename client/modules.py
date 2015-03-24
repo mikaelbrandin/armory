@@ -1,15 +1,16 @@
 __author__ = 'mikael.brandin@devolver.se'
 import os
 import os.path
-import ConfigParser
+import configparser
 
-import utils
+from . import utils
 
-import exceptions
+from . import exceptions
 
+META_SECTION = 'general'
 
 def init(context):
-    parser = context.register_command('module', command_module, help='interact with module metainfo and module data')
+    parser = context.register_command('module', command_module, aliases=['mod'], help='interact with module metainfo and module data')
     parser.add_argument('modules', metavar='MODULE', nargs='*')
     parser.add_argument('--create', '-C', action='store_true', help='create module in repository')
     return None
@@ -23,9 +24,9 @@ def command_module(args, context):
     else:
         # all and empty eq. all modules
         if len(args.modules) == 0:
-            args.modules = _modules.keys()
+            args.modules = list(_modules.keys())
         elif len(args.modules) > 0 and args.modules[0] == 'all':
-            args.modules = _modules.keys()
+            args.modules = list(_modules.keys())
 
         for module_name in args.modules:
             info(module_name, _modules, args, context)
@@ -38,10 +39,10 @@ def create(module_name, args, context):
 def info(module_name, available_mods, args, context):
     _module = available_mods[module_name]
 
-    print _module.name
-    print "        Version: " + _module.version
-    print "    Description: " + _module.short_description
-    print "      Directory: " + _module.module_directory
+    print(_module.name)
+    print(" Version:     " + _module.version)
+    print(" Description: " + _module.short_description)
+    print(" Directory:   " + _module.module_directory)
 
     pass
 
@@ -69,7 +70,7 @@ class Module:
         self.version = '~'
         self.description = '<no description>'
         self.short_description = '<no description>'
-        self.config = ConfigParser.SafeConfigParser()
+        self.config = configparser.SafeConfigParser()
         self.status = "ok"
 
         if not os.path.exists(self.module_info_file):
@@ -153,7 +154,7 @@ class Modules:
                 try:
                     modules[module_name] = self.get(context, module_name, 'latest')
                 except ModuleException:
-                    print "Broken module: " + module_name
+                    print("Broken module: " + module_name)
         # except BaseException as e:
         # print "Unable to list modules in " + context.get_modules_directory()
         # return modules
