@@ -2,7 +2,6 @@ __author__ = 'kra869'
 
 import subprocess
 import hashlib
-import urllib.parse
 import os
 
 

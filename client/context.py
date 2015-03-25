@@ -3,9 +3,10 @@ __author__ = 'kra869'
 import argparse
 import os
 import os.path
-import configparser
 
+import configparser
 from . import modules as mods
+from . import configurations as confs
 
 
 class ReadWriteDirectory(argparse.Action):
@@ -47,6 +48,7 @@ def root_path():
 class Context:
     def __init__(self):
         self.modules = mods.Modules()
+        self.configurations = confs.Configurations()
         self.home_directory = os.getcwd() + os.sep
 
         if not self.home_directory.endswith(os.sep):
@@ -78,7 +80,7 @@ class Context:
     def register_command(self, cmd, command, **kwargs):
         if kwargs.get('help') is None:
             kwargs['help'] = '<No Help Available>'
-            
+
         if not 'aliases' in kwargs:
             kwargs['aliases'] = []
 
@@ -138,10 +140,10 @@ class Context:
 
     def check_directories(self):
         pass
-        
+
     def get_configs_directory(self):
         return self.home_directory + 'conf.d' + os.sep
-        
+
     def get_config_directory(self, conf, version):
         return self.home_directory + 'conf.d' + os.sep + conf.module + os.sep + conf.branch + os.sep + version + os.sep
 
@@ -150,7 +152,4 @@ class Context:
 
     def get_modules_directory(self):
         return self.home_directory + 'modules.d' + os.sep
-
-    def get_config_directory(self, module_name, env_name):
-        return self.home_directory + 'conf.d' + os.sep + module_name + os.sep + env_name + os.sep
 

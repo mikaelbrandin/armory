@@ -2,15 +2,25 @@
 
 import argparse
 from collections import namedtuple
-from client import output
 import os
-import configparser
 import datetime
 
-ConfigName = namedtuple('ConfigName', ['branch', 'module'])
+from . import exceptions as exceptions
 
-#Constants
+from client import output
+import configparser as configparser
+
+
+ConfigName = namedtuple('ConfigName', ['module', 'branch'])
+
+# Constants
 META_SECTION = 'general'
+
+
+class ConfigurationException(exceptions.ArmoryException):
+    def __init__(self, msg):
+        super(ConfigurationException, self).__init__(msg)
+
 
 class ConfigurationNamingException(BaseException):
     def __init__(self, msg):
@@ -18,13 +28,17 @@ class ConfigurationNamingException(BaseException):
         pass
 
 
+def to_str(name):
+    return name.module + "." + name.branch
+
+
 def to_name(value):
     _value = value.split('.')
 
     if not len(_value) is 2:
-        raise ConfigurationNamingException("Unable to parse configuration name, excepts <BRANCH>.<MODULE> ex. dev.moduleA")
+        raise ConfigurationNamingException("Unable to parse configuration name, excepts <MODULE>.<BRANCH> ex. module-a.dev")
 
-    return ConfigName(branch=_value[0], module=_value[1])
+    return ConfigName(module=_value[0], branch=_value[1])
 
 
 class ConfigAction(argparse.Action):
@@ -45,60 +59,66 @@ def command_config(args, context):
             if create(conf, args, context):
                 output.ok();
     else:
+        configs = context.configurations.from_context(context)
+
+        if len(args.configs) == 0:
+            configs = configs.keys()
+
         for conf in args.configs:
-            info(conf, {}, args, context)
+            info(conf, configs, args, context)
 
     pass
 
 
 def create(conf, args, context):
-    output.msgln(conf.branch + '.' + conf.module+ ":")
-    
+    output.msgln(conf.branch + '.' + conf.module + ":")
+
     _dir = context.get_configs_directory()
-    
+
     if not os.path.exists(_dir):
         os.makedirs(_dir)
-        
+
     if os.path.exists(_dir + conf.module + os.sep + conf.branch + os.sep):
-        output.error(conf.branch+" branch already exists");
+        output.error(conf.branch + " branch already exists");
         return False
 
     version = "1.0.0"
-    conf_dir        = _dir + conf.module + os.sep + conf.branch + os.sep + version + os.sep
+    conf_dir = _dir + conf.module + os.sep + conf.branch + os.sep + version + os.sep
     conf_dir_latest = _dir + conf.module + os.sep + conf.branch + os.sep + 'latest'
     os.makedirs(conf_dir)
-    name = conf.branch+"."+conf.module
-    
+    name = to_str(conf)
+
     info = configparser.SafeConfigParser()
-    info.add_section(META_SECTION);
+    info.add_section(META_SECTION)
     info.set(META_SECTION, "name", name)
     info.set(META_SECTION, "version", version)
     info.set(META_SECTION, "created", str(datetime.datetime.now()))
     info.set(META_SECTION, "type", "configuration")
-    
+
     with open(conf_dir + name + '.info', "w+") as f:
         info.write(f)
-        
+
     os.symlink(conf_dir, conf_dir_latest)
 
     return True
 
 
-def info(conf, available_modules, args, context):
+def info(conf, available_confs, args, context):
     pass
-    
+
+
 class Configuration:
     MAX_SHORT_DESC_LENGTH = 50
 
-    def __init__(self, name, conf_directory, context):
+    def __init__(self, conf, conf_directory, context):
         self.context = context
 
         self.conf_directory = conf_directory
-        self.name = name
-        self.conf = to_name(name)
+        self.name = to_str(conf)
+        self.conf = conf
 
         if not os.path.exists(conf_directory + self.name + '.info'):
-            raise ModuleException("Not an valid module: missing .info file in " + module_directory)
+            raise ConfigurationException("Not an valid module: missing .info file in " + conf_directory)
 
         self.friendly_name = self.name
         self.conf_info_file = self.conf_directory + self.name + '.info'
@@ -121,11 +141,36 @@ class Configuration:
                 self.description = self.config.get('general', 'description')
                 self.short_description = self.description.strip().replace('\n', ' ')
                 self.short_description = self.short_description.replace('\t', ' ')
-                if len(self.short_description) > Module.MAX_SHORT_DESC_LENGTH:
-                    self.short_description = self.short_description[0:Module.MAX_SHORT_DESC_LENGTH - 3] + '...'
+                if len(self.short_description) > Configuration.MAX_SHORT_DESC_LENGTH:
+                    self.short_description = self.short_description[0:Configuration.MAX_SHORT_DESC_LENGTH - 3] + '...'
 
     def __conf_get(self, name, val):
         if self.config.has_option('general', name):
             return self.config.get('general', name)
         else:
             return val
+
+
+class Configurations:
+    def __init__(self):
+        pass
+
+    def get(self, context, conf, version):
+        return Configuration(conf, context.get_config_directory(conf, version), context)
+
+    def from_context(self, context):
+        configs = {}
+        # try:
+        _dir = context.get_configs_directory()
+        for module_name in os.listdir(_dir):
+            print(module_name)
+            for branch_name in os.listdir(_dir + module_name):
+                print(branch_name)
+                if os.path.isdir(_dir + module_name + os.sep + branch_name + os.sep):
+                    try:
+                        conf = ConfigName(module=module_name, branch=branch_name)
+                        configs[conf] = self.get(context, conf, 'latest')
+                    except ConfigurationException:
+                        print("Broken configuration: " + module_name + "." + branch_name)
+
+        return configs

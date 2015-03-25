@@ -46,11 +46,9 @@ def info(module_name, available_mods, args, context):
 
     pass
 
-
 class ModuleException(exceptions.ArmoryException):
     def __init__(self, msg):
         super(ModuleException, self).__init__(msg)
-
 
 class Module:
     MAX_SHORT_DESC_LENGTH = 50
