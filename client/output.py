@@ -1,6 +1,5 @@
-
 import sys
-import os
+
 
 class bcolors:
     BLUE = '\033[94m'
@@ -10,21 +9,32 @@ class bcolors:
     END = '\033[0m'
     BOLD = '\033[1m'
 
-def msgln(text):
-    print(text)
-    
-def msg(text):
-    sys.stdout.write(text)
-    
+
+def msgln(text, **kwargs):
+    msg(text + "\n", **kwargs)
+
+
+def msg(text, **kwargs):
+    out = ""
+
+    if 'label' in kwargs:
+        out += "[" + bcolors.GREEN + kwargs.get('label') + bcolors.END + "] "
+
+    out += text
+    sys.stdout.write(out)
+
+
 def warn(text):
     print(bcolors.LIGHT_RED, text, bcolors.END)
-    
+
+
 def error(text):
     print(bcolors.RED, text, bcolors.END)
-    
+
+
 def ok(text=None):
     if text is None:
-        print(bcolors.GREEN+"[ok]"+bcolors.END)
+        print(bcolors.GREEN + "[ok]" + bcolors.END)
     else:
-        print(bolcors.GREEN+"[ok]"+bcolors.END+text)
+        print(bcolors.GREEN + "[ok]" + bcolors.END + text)
     

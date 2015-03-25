@@ -57,14 +57,15 @@ def command_config(args, context):
     if args.create:
         for conf in args.configs:
             if create(conf, args, context):
-                output.ok();
+                output.ok()
     else:
         configs = context.configurations.from_context(context)
 
+        selected = args.configs
         if len(args.configs) == 0:
-            configs = configs.keys()
+            selected = [to_name(x) for x in configs.keys()]
 
-        for conf in args.configs:
+        for conf in selected:
             info(conf, configs, args, context)
 
     pass
@@ -104,6 +105,11 @@ def create(conf, args, context):
 
 
 def info(conf, available_confs, args, context):
+    name = to_str(conf)
+    config = available_confs[to_str(conf)]
+
+    output.msgln(name + "-" + config.version, label=config.status)
+
     pass
 
 
@@ -118,7 +124,7 @@ class Configuration:
         self.conf = conf
 
         if not os.path.exists(conf_directory + self.name + '.info'):
-            raise ConfigurationException("Not an valid module: missing .info file in " + conf_directory)
+            raise ConfigurationException("Invalid config, missing .info file in " + conf_directory)
 
         self.friendly_name = self.name
         self.conf_info_file = self.conf_directory + self.name + '.info'
@@ -160,17 +166,14 @@ class Configurations:
 
     def from_context(self, context):
         configs = {}
-        # try:
         _dir = context.get_configs_directory()
         for module_name in os.listdir(_dir):
-            print(module_name)
             for branch_name in os.listdir(_dir + module_name):
-                print(branch_name)
                 if os.path.isdir(_dir + module_name + os.sep + branch_name + os.sep):
                     try:
                         conf = ConfigName(module=module_name, branch=branch_name)
-                        configs[conf] = self.get(context, conf, 'latest')
-                    except ConfigurationException:
-                        print("Broken configuration: " + module_name + "." + branch_name)
+                        configs[to_str(conf)] = self.get(context, conf, 'latest')
+                    except ConfigurationException as e:
+                        output.error("Broken configuration '" + module_name + "." + branch_name + "' - " + e.msg)
 
         return configs
