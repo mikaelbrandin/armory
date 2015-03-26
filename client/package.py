@@ -44,9 +44,11 @@ def command_package(args, context):
                 info.read(file)
 
                 name = os.path.splitext(os.path.basename(file))[0]
+                # name =
+                print("Packaging " + name)
 
                 if info.has_option("general", "type") and info.get('general', 'type') == 'configuration':
-                    package_config(args, name, info, configurations.Configuration(name, dir, context))
+                    package_config(args, name, info, configurations.Configuration(configurations.to_name(name), dir, context))
                 else:
                     package_module(args, name, info, modules.Module(name, dir, context))
 
@@ -100,7 +102,7 @@ def package_config(args, context, info, config):
     metainfo.set('meta', 'friendly_name', config.friendly_name)
     metainfo.set('meta', 'hash', package_hash)
     metainfo.set('meta', 'hash_type', 'sha1')
-    metainfo.set('meta', 'package_type', 'configuration')
+    metainfo.set('meta', 'type', 'configuration')
     metainfo.set('meta', 'built', str(datetime.datetime.now()))
     metainfo.set('meta', 'built_by', os.getlogin())
     metainfo.set('meta', 'version', version)
@@ -171,7 +173,7 @@ def package_module(args, context, info, module):
     metainfo.set('meta', 'friendly_name', module.friendly_name)
     metainfo.set('meta', 'hash', package_hash)
     metainfo.set('meta', 'hash_type', 'sha1')
-    metainfo.set('meta', 'package_type', 'module')
+    metainfo.set('meta', 'type', 'module')
     metainfo.set('meta', 'built', str(datetime.datetime.now()))
     metainfo.set('meta', 'built_by', os.getlogin())
     metainfo.set('meta', 'version', version);

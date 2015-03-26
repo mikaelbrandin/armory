@@ -8,7 +8,7 @@ import datetime
 from . import exceptions as exceptions
 
 from client import output
-import configparser as configparser
+import configparser
 
 
 ConfigName = namedtuple('ConfigName', ['module', 'branch'])

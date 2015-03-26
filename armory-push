@@ -1,18 +1,25 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf-8
 
 import sys
-import client.protocol as proc
 import os
 import subprocess
+
+import client.protocol as proc
 import repository.context as ctx
+
 
 pid = str(os.getpid());
 
-def debug(*args):
-    sys.stderr.write(pid+" "+' '.join(map(str,args)) + '\n')
 
-proc.write_msg(sys.stdout, "helo v=1.0.0");
+def debug(*args):
+    sys.stderr.write(pid + " " + ' '.join(map(str, args)) + '\n')
+
+
+# Always start with helo
+proc.write_msg(sys.stdout, "helo v=1.0.0")
+
+debug("helo")
 
 if not ctx.is_armory_central_repo_dir(os.getcwd()):
     proc.write_msg(sys.stdout, "error code=1001")
@@ -23,22 +30,23 @@ incoming = []
 while True:
 
     msg = proc.read_msg(sys.stdin)
-    
+
     if msg.msg == 'ok':
-        #debug("ok")
+        debug("ok")
         break
     elif msg.msg == 'push':
-        #debug("push")
+        debug("push")
         incoming.append(proc.Push._make(msg.params))
     else:
-        #debug("error")
+        # debug("error")
         proc.write_msg(sys.stdout, "error")
         sys.exit(1)
 
-proc.write_msg(sys.stdout, "accept");
+debug("accept")
+proc.write_msg(sys.stdout, "accept")
 
 for push in incoming:
-    debug("@"+push.package)
-    proc.read_file(sys.stdin, push.package+"-"+push.hash+".pack", push.hash)
-    debug("post-processing: armory-repo push "+push.package)
-    subprocess.call(["armory-repo", "--yes", "push", "--remove", push.package+"-"+push.hash+".pack"])
+    debug("@" + push.package)
+    proc.read_file(sys.stdin, push.package + "-" + push.hash + ".pack", push.hash)
+    debug("post-processing: armory-repo push " + push.package)
+    subprocess.call(["armory-repo", "--yes", "push", "--remove", push.package + "-" + push.hash + ".pack"])

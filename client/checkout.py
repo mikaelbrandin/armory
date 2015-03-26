@@ -7,7 +7,7 @@ from . import exceptions
 
 class CheckoutException(exceptions.ArmoryException):
     def __init__(self, msg):
-        super(PushException, self).__init__(msg)
+        super(CheckoutException, self).__init__(msg)
 
 
 def init(context):
