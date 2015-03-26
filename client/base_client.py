@@ -3,6 +3,8 @@ __author__ = 'mikael.brandin@devolver.se'
 
 import os
 import subprocess
+import io
+import sys
 
 from urllib.parse import urlparse
 from client import exceptions
@@ -18,7 +20,7 @@ class BaseClient:
     def push(self, package_name, pack_file, hash):
         pass;
 
-    def pull(self, module, version, dst):
+    def pull(self, package_name, package_version, dst):
         pass;
 
     def pull_branch(self, branch_name, home_directory):
@@ -95,13 +97,13 @@ class IOClient(BaseClient):
 
         return True
 
-    def pull(self, module, version, dst):
+    def pull(self, type, package_name, version, dst):
         shell = self.connect(self.uri, 'pull')
 
         if shell is None:
             raise ClientException("unable to create shell")
 
-        shell.write_msg("pull /modules/" + module + '/' + version)
+        shell.write_msg("pull /"+type+"/" + package_name + '/' + version)
         shell.write_msg("ok")
 
         msg = shell.read_msg()
@@ -110,7 +112,7 @@ class IOClient(BaseClient):
             shell.wait()
             return None
         elif msg.msg == 'reject':
-            print("reject: " + module)
+            print("reject: " + package_name)
             return None
         elif msg.msg == 'error':
             print("error: " + str(msg))
@@ -139,7 +141,8 @@ class Shell:
         return protocol.write_file(self.process.stdin, file, hash)
 
     def read_file(self, file, hash):
-        return protocol.read_file(self.process.stdout, file, hash)
+        with io.open(self.process.stdout.fileno(), mode='rb', closefd=False) as stream:
+            return protocol.read_file(stream, file, hash)
 
     def wait(self):
         self.process.wait()

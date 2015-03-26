@@ -51,5 +51,8 @@ def command_init(args, context):
     
     with open(db_directory+'repositories', "w+") as f:
         repositories.write(f);
+        
+    with open(db_directory+'local', "w+") as f:
+        f.write('1.0.0');
 
     return None

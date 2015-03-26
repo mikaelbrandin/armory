@@ -33,7 +33,7 @@ def is_armory_repository_dir(dir):
         return False
     elif not os.access(dir, os.R_OK):
         return False
-    elif not os.path.exists(dir + '.armory' + os.sep):
+    elif not os.path.exists(dir + '.armory' + os.sep + 'local'):
         return False
     elif not os.access(dir, os.W_OK):
         return False

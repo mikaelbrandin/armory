@@ -44,9 +44,12 @@ def command_install(args, context):
 
 def pull(name, repository_uri, context, args):
     client = clients.create(repository_uri);
-
     package = context.db_directory + '/' + name + '-latest.pack'
-    client.pull('modules', name, 'latest', package)
+    
+    if '.' in name:
+        client.pull('configurations', name, 'latest', package);
+    else:
+        client.pull('modules', name, 'latest', package)
 
     return package
 

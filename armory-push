@@ -4,8 +4,9 @@
 import sys
 import os
 import subprocess
+import io
 
-import client.protocol as proc
+import ar.protocol as proc
 import repository.context as ctx
 
 
@@ -21,7 +22,7 @@ proc.write_msg(sys.stdout, "helo v=1.0.0")
 
 debug("helo")
 
-if not ctx.is_armory_central_repo_dir(os.getcwd()):
+if not os.path.exists('.armory/remote'):
     proc.write_msg(sys.stdout, "error code=1001")
     sys.exit(0)
 
@@ -45,8 +46,11 @@ while True:
 debug("accept")
 proc.write_msg(sys.stdout, "accept")
 
+
+reader = io.open(sys.stdin.fileno(), mode='rb', closefd=False)
+
 for push in incoming:
     debug("@" + push.package)
-    proc.read_file(sys.stdin, push.package + "-" + push.hash + ".pack", push.hash)
+    proc.read_file(reader, push.package + "-" + push.hash + ".pack", push.hash)
     debug("post-processing: armory-repo push " + push.package)
     subprocess.call(["armory-repo", "--yes", "push", "--remove", push.package + "-" + push.hash + ".pack"])

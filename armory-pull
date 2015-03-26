@@ -1,12 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf-8
 
 import sys
-import client.protocol as proc
+import ar.protocol as proc
 import os
 import subprocess
-import ConfigParser
+import configparser
 import distutils.version as Versions
+import io
 
 pid = str(os.getpid());
 
@@ -25,7 +26,7 @@ def pull_module(module, version):
         debug(module+' does not exist');
         sys.exit(1)
         
-    versions = ConfigParser.SafeConfigParser();
+    versions = configparser.SafeConfigParser();
     versions.read(dir+'VERSIONS')
     
     latest = None
@@ -42,11 +43,43 @@ def pull_module(module, version):
     pack = os.getcwd()+os.sep+'packages'+os.sep+module+'-'+str(latest)+'.pack'
     if os.path.exists(pack):
         debug("pack="+pack)
-        proc.write_file(sys.stdout, pack, 0)
+        with io.open(sys.stdout.fileno(), mode='wb', closefd=False) as f:
+            proc.write_file(f, pack, 0)
     else:
         debug("missing pack="+pack)
         sys.exit(1);
+        
+def pull_configuration(module, version):
+
+    dir = os.getcwd()+os.sep+'configurations'+os.sep+module+os.sep
+    if not os.path.exists(dir):
+        debug(module+' does not exist');
+        sys.exit(1)
+        
+    versions = configparser.SafeConfigParser();
+    versions.read(dir+'VERSIONS')
     
+    latest = None
+    for version in versions.sections():
+        v = Versions.LooseVersion(version)
+        
+        if not latest:
+            latest = v;
+        elif v > latest:
+            latest = v
+            
+    
+    debug("latest="+str(latest))
+    pack = os.getcwd()+os.sep+'packages'+os.sep+module+'-'+str(latest)+'.pack'
+    if os.path.exists(pack):
+        debug("pack="+pack)
+        with io.open(sys.stdout.fileno(), mode='wb', closefd=False) as f:
+            proc.write_file(f, pack, 0)
+    else:
+        debug("missing pack="+pack)
+        sys.exit(1);
+
+        
 def pull_branch(branch):
     if os.path.exists(branch):
         proc.write_file(sys.stdout, branch, 0)

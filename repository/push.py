@@ -34,17 +34,23 @@ def push(pack, args, context):
     version = metainfo.get('meta', 'version')
     hash = metainfo.get('meta', 'hash')
     hash_type = metainfo.get('meta', 'hash_type')
-    print name+'-'+version
+    type = metainfo.get('meta', 'type')
+    print type + " " + name+'-'+version
     
-    module_version_dir = context.repo_directory + 'modules' + os.sep +  name + os.sep + version + os.sep
-    module_dir = context.repo_directory + 'modules' + os.sep +  name + os.sep
+    
+    if type == 'configuration':
+        module_version_dir = context.repo_directory + 'configurations' + os.sep +  name + os.sep + version + os.sep
+        module_dir = context.repo_directory + 'configurations' + os.sep +  name + os.sep
+    else:
+        module_version_dir = context.repo_directory + 'modules' + os.sep +  name + os.sep + version + os.sep
+        module_dir = context.repo_directory + 'modules' + os.sep +  name + os.sep
+        
     if not os.path.exists(module_version_dir):
         os.makedirs(module_version_dir)
 
         
     shutil.copyfile(tmp_metainfo, module_version_dir+name+'.metainfo')
     shutil.copyfile(tmp_manifest, module_version_dir+name+'.manifest')
-    
     shutil.copyfile(pack, context.repo_directory+'packages'+os.sep+name+'-'+version+'.pack')
     
     #VERSION index
@@ -62,7 +68,11 @@ def push(pack, args, context):
     
     #MODULES index
     modules_index = ConfigParser.SafeConfigParser()
-    modules_index.read(context.repo_directory+'MODULES')
+    
+    if type == 'configuration':
+        modules_index.read(context.repo_directory+'CONFIGURATIONS')
+    else:
+       modules_index.read(context.repo_directory+'MODULES')
     
     if not modules_index.has_section(name):
         modules_index.add_section(name)
@@ -70,8 +80,13 @@ def push(pack, args, context):
     modules_index.set(name, 'hash', hash)
     modules_index.set(name, 'version', version)
     modules_index.set(name, 'hash_type', hash_type)
-    with open(context.repo_directory+'MODULES', 'w+') as f:
-        modules_index.write(f);
+    
+    if type == 'configuration':
+        with open(context.repo_directory+'CONFIGURATIONS', 'w+') as f:
+            modules_index.write(f);
+    else:
+        with open(context.repo_directory+'MODULES', 'w+') as f:
+            modules_index.write(f);
     
         
     shutil.rmtree(tmp_dir)

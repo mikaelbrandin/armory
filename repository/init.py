@@ -27,6 +27,10 @@ def command_init(args, context):
     if not os.path.exists(args.directory+'.armory'+os.sep):
         os.makedirs(args.directory+'.armory'+os.sep)
         
+    if not os.path.exists(args.directory+'.armory'+os.sep+'REMOTE'):
+        with open(args.directory+'.armory'+os.sep+'remote') as f:
+            f.write("1.0.0");
+        
     for branch in args.branches:
         branches.create_branch(context, branch)
         

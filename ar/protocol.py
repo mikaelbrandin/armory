@@ -21,7 +21,7 @@ def debug(msg):
 
 def write_msg(output, msg):
     msg = msg + "\n"
-    n = output.write(msg.encode('utf-8'))
+    n = output.write(msg)
     output.flush()
     return n
 
@@ -36,7 +36,7 @@ def read_msg(input):
     if len(line) > 1:
         params = line[1:]
 
-    return Message(msg=line[0].decode('utf-8'), params=params)
+    return Message(msg=line[0], params=params)
 
 
 def write_file(output, file, hash):
