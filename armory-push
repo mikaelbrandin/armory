@@ -52,5 +52,5 @@ reader = io.open(sys.stdin.fileno(), mode='rb', closefd=False)
 for push in incoming:
     debug("@" + push.package)
     proc.read_file(reader, push.package + "-" + push.hash + ".pack", push.hash)
-    debug("post-processing: armory-repo push " + push.package)
-    subprocess.call(["armory-repo", "--yes", "push", "--remove", push.package + "-" + push.hash + ".pack"])
+    debug("post-processing: army push " + push.package)
+    subprocess.call(["army", "--yes", "push", "--remove", push.package + "-" + push.hash + ".pack"])
