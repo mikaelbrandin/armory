@@ -7,6 +7,7 @@ import pwd
 
 from . import exceptions
 from . import utils
+from . import configurations
 
 
 class StartException(exceptions.ArmoryException):
@@ -97,8 +98,8 @@ def start(args, context, module, uid, gid):
 
     env = os.environ.copy()
     env.update(context.env)
-    env['ARMORY_MODULE_DIRECTORY'] = context.get_module_directory(module.name)
-    env['ARMORY_MODULE_CONF_DIRECTORY'] = context.get_config_directory(module.name, env['ARMORY_ENV'])
+    env['ARMORY_MODULE_DIRECTORY'] = context.get_module_directory(module.name, 'latest')
+    env['ARMORY_MODULE_CONF_DIRECTORY'] = context.get_config_directory(configurations.ConfigName(module.name, env['ARMORY_BRANCH']), 'latest')
 
     if os.path.exists(module.module_directory + 'run'):
         start_with_runscript(args, context, module, env, uid, gid)
@@ -113,7 +114,7 @@ def start(args, context, module, uid, gid):
 
 def start_with_runscript(args, context, module, env, uid, gid):
     _proc = subprocess.Popen(
-        ['nohup', module.module_directory + 'start'],
+        ['nohup', module.module_directory + 'run'],
         env=env,
         stdout=sys.stdout,
         stderr=sys.stderr,

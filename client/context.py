@@ -65,15 +65,14 @@ class Context:
         if os.path.exists(self.user_directory + '.armory'):
             self.user.read(self.user_directory + '.armory')
 
-        self.environment = 'dev'
+        self.branch_name = 'dev'
         self.env = {
-            'ARMORY_ENV': self.environment,
+            'ARMORY_BRANCH': self.branch_name,
             'ARMORY_VERSION': '1.0.0'
         }
 
         self.args_parser = argparse.ArgumentParser(prog='Armory')
         self.args_parser.add_argument('--debug', action='store_true', help='Enable debugging (mainly)')
-        self.args_parser.add_argument('--environment', metavar='ENV', help='use ENV as current environment')
         self.args_parser.add_argument('--directory', metavar='DIRECTORY', default=os.getcwd() + os.sep)
         self.sub_args_parsers = self.args_parser.add_subparsers(title='Armory commands', description='The commands available with Armory', help='Available Armory commmands')
 
@@ -99,16 +98,15 @@ class Context:
             _args.directory += os.sep
 
         self.home_directory = self.resolve_home_dir(_args.directory)
-        self.db_directory = _args.directory + '.armory' + os.sep
+        self.db_directory = self.home_directory + '.armory' + os.sep
 
         self.config.read(self.db_directory + 'config')
 
-        if _args.environment is not None:
-            self.environment = _args.environment
-        elif self.config.has_option('environment', 'default'):
-            self.environment = self.config.get('environment', 'default')
+        if os.path.exists(self.db_directory + 'HEAD'):
+            _head = os.readlink(self.db_directory + 'HEAD')
+            self.branch_name = os.path.basename(_head).split('.')[0]
 
-        self.branch_file = self.home_directory + self.environment + '.armory'
+        self.branch_file = self.home_directory + self.branch_name + '.armory'
         self.branch.read(self.branch_file)
 
         if self.branch.has_section('environment'):

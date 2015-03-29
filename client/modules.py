@@ -6,6 +6,7 @@ import configparser
 from . import utils
 from . import exceptions
 from . import output
+from ar.semantic_version import Version
 
 META_SECTION = 'general'
 
@@ -80,7 +81,7 @@ def command_list_modules(args, context):
         _versions = context.modules.get_versions(context, _module.name)
         
         for _version in _versions:
-            output.msgln(_module.name, label=_version)
+            output.msgln(_module.name, label=str(_version))
         
     
 def info(module_name, available_mods, args, context):
@@ -196,9 +197,9 @@ class Modules:
             if module_directory == 'latest':
                 continue
                 
-            _results.append(module_directory)
+            _results.append(Version(module_directory))
             
-        return _results
+        return sorted(_results)
 
     def from_context(self, context):
         modules = {}

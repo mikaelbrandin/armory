@@ -97,7 +97,7 @@ while True:
         debug("ok")
         break
     elif msg.msg == 'pull':
-        debug("pull")
+        debug("pull "+str(msg.params))
         outgoing.append(msg.params[0])
     else:
         debug("error")
@@ -107,8 +107,6 @@ while True:
 proc.write_msg(sys.stdout, "accept");
 
 for req in outgoing:
-    debug("outgoing "+req)
-    
     path = req.split('/')[1:]
     
     if path[0] == 'modules':
@@ -117,5 +115,3 @@ for req in outgoing:
         pull_configuration(path[1], path[2])
     elif path[0] == 'branch':
         pull_branch(path[1])
-        
-    debug(str(path))

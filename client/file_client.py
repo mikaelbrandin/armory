@@ -24,8 +24,6 @@ class Client(base_client.IOClient):
         shell = base_client.Shell(cmd, self.uri.path)
 
         msg = shell.read_msg()
-
-        print(str(msg))
         if msg.msg == 'helo':
             return shell
         else:

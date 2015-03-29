@@ -15,6 +15,7 @@ import client.context as context
 import client.exceptions as exceptions
 import client.modules as cmd_module
 import client.configurations as cmd_config
+import client.branch as cmd_branch
 
 context = context.Context()
 
@@ -28,6 +29,7 @@ cmd_push.init(context)
 cmd_pull.init(context)
 cmd_checkout.init(context)
 cmd_module.init(context)
+cmd_branch.init(context)
 cmd_config.init(context)
 
 # Execute based on command-line arguments
