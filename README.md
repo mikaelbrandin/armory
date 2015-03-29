@@ -9,7 +9,24 @@ Checkout code and run sudo python install.py
     #Checkout a branch in the current context (directory)
     armory checkout <SCHEMA>://<REPOSITORY>/<BRANCH>.armory
     
+#Start a module
+
+    armory start <MODULE>
+    
+#Start all modules in branch
+
+    armory start
+    
+#Stop a module
+    
+    armory stop <MODULE
+
+#Stop all modules in branch
+
+    armory stop
+    
 #Switch to branch
+
     armory checkout <BRANCH>
     #or
     armory branch --set <BRANCH> 
