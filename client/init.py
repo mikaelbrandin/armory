@@ -18,9 +18,14 @@ def command_init(args, context):
     if not utils.confirm("Initialize repository in "+args.directory):
         print("Skipping initalization of local repository")
     
-    db_directory = args.directory + '.armory'+os.sep
-    modules_directory = args.directory + 'modules.d'+os.sep
-    configuration_directory = args.directory + 'conf.d'+os.sep
+    initialize(args.directory, args.repository)
+
+    return None
+    
+def initialize(directory, repository):
+    db_directory = directory + '.armory'+os.sep
+    modules_directory = directory + 'modules.d'+os.sep
+    configuration_directory = directory + 'conf.d'+os.sep
     
     if not os.path.exists(db_directory):
         print("Create .armory directory")
@@ -46,13 +51,12 @@ def command_init(args, context):
         repositories.add_section('configurations');
     
     #Default repository
-    repositories.set('modules', 'default', args.repository)
-    repositories.set('configurations', 'default', args.repository)
+    repositories.set('modules', 'default', repository)
+    repositories.set('configurations', 'default', repository)
     
     with open(db_directory+'repositories', "w+") as f:
         repositories.write(f);
         
     with open(db_directory+'local', "w+") as f:
         f.write('1.0.0');
-
-    return None
+    

@@ -82,7 +82,7 @@ class IOClient(BaseClient):
 
         msg = shell.read_msg()
         if msg.msg == 'accept':
-            shell.read_file(home_directory + branch_name, 0)
+            shell.read_file(home_directory + branch_name + '.armory', 0)
             shell.wait()
             return True
         elif msg.msg == 'reject':
