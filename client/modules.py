@@ -4,8 +4,8 @@ import os.path
 import configparser
 
 from . import utils
-
 from . import exceptions
+from . import output
 
 META_SECTION = 'general'
 
@@ -13,6 +13,8 @@ def init(context):
     parser = context.register_command('module', command_module, aliases=['mod'], help='interact with module metainfo and module data')
     parser.add_argument('modules', metavar='MODULE', nargs='*')
     parser.add_argument('--create', '-C', action='store_true', help='create module in repository')
+    parser.add_argument('--list', '-l', action='store_true', help='list modules and versions')
+    parser.add_argument('--version', '-v', help='indicate version of operation (--create, ...)')
     return None
 
 
@@ -20,7 +22,10 @@ def command_module(args, context):
     _modules = context.modules.from_context(context)
 
     if args.create:
-        create(args.modules, args, context)
+        for module_name in args.modules:
+            command_module_create(module_name, args, context)
+    elif args.list:
+        command_list_modules(args, context)
     else:
         # all and empty eq. all modules
         if len(args.modules) == 0:
@@ -32,17 +37,56 @@ def command_module(args, context):
             info(module_name, _modules, args, context)
 
 
-def create(module_name, args, context):
+def command_module_create(module_name, args, context):
+
+    version = 'latest'
+    if 'version' in args:
+        version = args.version
+
+    if os.path.exists(context.get_module_directory(module_name, version)):
+        raise ModuleException('Module exists: '+module_name+'-'+version)
+        
+    if version == 'latest':
+        version = '1.0.0'
+ 
+    create(module_name, version, context)
+    
     pass
 
+def create(module_name, version, context):
+    dir = context.get_module_directory(module_name, version)
+    
+    #Create module directory
+    os.makedirs(dir)
+    
+    #Create .info
+    _info = configparser.SafeConfigParser()
+    _info.add_section('general')
+    _info.set('general', 'name', module_name)
+    _info.set('general', 'version', version)
+    
+    with open(dir + module_name + '.info', "w+") as f:
+        _info.write(f)
+        
+    _versions = context.modules.get_versions(context, module_name)
 
+    return None
+
+def command_list_modules(args, context):
+    _modules = context.modules.from_context(context)
+    
+    for _name in _modules:
+        _module = _modules[_name]
+        _versions = context.modules.get_versions(context, _module.name)
+        
+        for _version in _versions:
+            output.msgln(_module.name, label=_version)
+        
+    
 def info(module_name, available_mods, args, context):
     _module = available_mods[module_name]
-
-    print(_module.name)
-    print(" Version:     " + _module.version)
-    print(" Description: " + _module.short_description)
-    print(" Directory:   " + _module.module_directory)
+    
+    output.msgln(module_name + " (" + _module.version + ")", label=_module.status)
 
     pass
 
@@ -142,6 +186,19 @@ class Modules:
 
     def get(self, context, module_name, version):
         return Module(module_name, context.get_module_directory(module_name, version), context)
+        
+    def get_versions(self, context, module_name):
+        _dir = context.get_modules_directory()
+        _dir += module_name + os.sep
+        
+        _results = []
+        for module_directory in os.listdir(_dir):
+            if module_directory == 'latest':
+                continue
+                
+            _results.append(module_directory)
+            
+        return _results
 
     def from_context(self, context):
         modules = {}

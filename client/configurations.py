@@ -108,7 +108,7 @@ def info(conf, available_confs, args, context):
     name = to_str(conf)
     config = available_confs[to_str(conf)]
 
-    output.msgln(name + "-" + config.version, label=config.status)
+    output.msgln(name + " (" + config.version + ")", label=config.status)
 
     pass
 
