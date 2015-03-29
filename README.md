@@ -9,7 +9,11 @@ Considering a normal case of a development environment running many nodes in a l
 host much like version control systems like Git operate.
 
 # Installation
-Checkout code and run sudo python install.py
+Checkout code and run install.py
+
+    git clone https://github.com/mikaelbrandin/armory.git
+    cd armory
+    sudo python install.py
 
 # Getting Started
 
