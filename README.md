@@ -4,17 +4,23 @@ An deployment and management tool for Ubuntu/Linux
 # Installation
 Checkout code and run sudo python install.py
 
-#Create new local repository
-TDB:
-armory init <REPOSITORY> ex. armory init file:///opt/repository/
+#Checkout local repository
+
+    #Checkout a branch in the current context (directory)
+    armory checkout <REPOSITORY>/<BRANCH>.armory
+
+or
+
+    #Initialize (create directory and checkout)
+    armory init <REPOSITORY>/<BRANCH>.armory [DIR]
+
+ex. armory init file:///opt/repository/
 
 # Create modules
-TBD: 
-armory create-module <NAME>
+ 
+    armory module --create <NAME>
 
-#Commit changes and push to remote
-armory commit <MODULE>
-armory push <MODULE>
+# Package and push changes
 
-TODO:
-* Context sensitive directory (basically armory commit from module directory notice the module context)
+    armory package /module/directory/
+    armory push <MODULE>.pack
