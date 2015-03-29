@@ -1,6 +1,6 @@
 
 import os
-import ConfigParser
+import configparser
 
 def init(context):
     parser = context.register_command('branch', command_branch, help='Initialize a new Armory repository')
@@ -21,7 +21,7 @@ def command_branch(args, context):
 def add_to_branch(context, branch_name, modules):
     branch_info = context.repo_directory+branch_name+'.armory'
     
-    info = ConfigParser.SafeConfigParser();
+    info = configparser.SafeConfigParser();
     info.read(branch_info)
     
     for module in modules:
@@ -38,7 +38,7 @@ def create_branch(context, branch_name):
     branch_info = context.repo_directory+branch_name+'.armory'
 
     if not os.path.exists(branch_info):
-        info = ConfigParser.SafeConfigParser()
+        info = configparser.SafeConfigParser()
         info.add_section('meta')
         info.set('meta', 'name', branch_name);
         with open(branch_info, 'w+') as f:

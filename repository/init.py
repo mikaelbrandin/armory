@@ -1,7 +1,7 @@
 
 import os
-import utils
-import branch as branches
+from . import utils
+from . import branch as branches
 
 def init(context):
     parser = context.register_command('init', command_init, help='Initialize a new Armory repository')
@@ -9,7 +9,7 @@ def init(context):
     
 def command_init(args, context):
     if not utils.confirm("Initialize repository in "+args.directory):
-        print "ok, skipping repository initialization"
+        print("ok, skipping repository initialization")
         return None
         
     if not os.path.exists(args.directory):

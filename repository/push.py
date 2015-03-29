@@ -1,9 +1,9 @@
 
 import os
-import utils
+from . import utils
 import tarfile
 import tempfile
-import ConfigParser
+import configparser
 import shutil
 
 def init(context):
@@ -22,7 +22,7 @@ def push(pack, args, context):
     tmp_metainfo = tmp_dir+os.sep+'METAINF'
     tmp_manifest = tmp_dir+os.sep+'MANIFEST'
 
-    metainfo = ConfigParser.SafeConfigParser()
+    metainfo = configparser.SafeConfigParser()
     
     with tarfile.open(pack, 'r') as package:
         package.extract('METAINF', tmp_dir)
@@ -35,7 +35,7 @@ def push(pack, args, context):
     hash = metainfo.get('meta', 'hash')
     hash_type = metainfo.get('meta', 'hash_type')
     type = metainfo.get('meta', 'type')
-    print type + " " + name+'-'+version
+    print(type + " " + name+'-'+version)
     
     
     if type == 'configuration':
@@ -54,7 +54,7 @@ def push(pack, args, context):
     shutil.copyfile(pack, context.repo_directory+'packages'+os.sep+name+'-'+version+'.pack')
     
     #VERSION index
-    module_version_index = ConfigParser.SafeConfigParser()
+    module_version_index = configparser.SafeConfigParser()
     module_version_index.read(module_dir+'VERSIONS')
     
     if not module_version_index.has_section(version):
@@ -67,7 +67,7 @@ def push(pack, args, context):
         module_version_index.write(f);
     
     #MODULES index
-    modules_index = ConfigParser.SafeConfigParser()
+    modules_index = configparser.SafeConfigParser()
     
     if type == 'configuration':
         modules_index.read(context.repo_directory+'CONFIGURATIONS')
