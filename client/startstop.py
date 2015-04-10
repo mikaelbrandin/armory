@@ -131,7 +131,7 @@ def start_with_runscript(args, context, module, env, uid, gid):
 
 def start_with_startscript(args, context, module, env, uid, gid):
     proc = subprocess.Popen(
-        ['nohup', module.module_directory + 'start'],
+        [module.module_directory + 'start'],
         env=env,
         stdout=sys.stdout,
         stderr=sys.stderr,
