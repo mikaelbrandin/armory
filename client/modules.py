@@ -1,14 +1,16 @@
 __author__ = 'mikael.brandin@devolver.se'
 import os
 import os.path
-import configparser
 
+import configparser
 from . import utils
 from . import exceptions
 from . import output
 from ar.semantic_version import Version
 
+
 META_SECTION = 'general'
+
 
 def init(context):
     parser = context.register_command('module', command_module, aliases=['mod'], help='interact with module metainfo and module data')
@@ -39,61 +41,64 @@ def command_module(args, context):
 
 
 def command_module_create(module_name, args, context):
-
     version = 'latest'
     if 'version' in args:
         version = args.version
 
     if os.path.exists(context.get_module_directory(module_name, version)):
-        raise ModuleException('Module exists: '+module_name+'-'+version)
-        
+        raise ModuleException('Module exists: ' + module_name + '-' + version)
+
     if version == 'latest':
         version = '1.0.0'
- 
+
     create(module_name, version, context)
-    
+
     pass
+
 
 def create(module_name, version, context):
     dir = context.get_module_directory(module_name, version)
-    
-    #Create module directory
+
+    # Create module directory
     os.makedirs(dir)
-    
-    #Create .info
+
+    # Create .info
     _info = configparser.SafeConfigParser()
     _info.add_section('general')
     _info.set('general', 'name', module_name)
     _info.set('general', 'version', version)
-    
+
     with open(dir + module_name + '.info', "w+") as f:
         _info.write(f)
-        
+
     _versions = context.modules.get_versions(context, module_name)
 
     return None
 
+
 def command_list_modules(args, context):
     _modules = context.modules.from_context(context)
-    
+
     for _name in _modules:
         _module = _modules[_name]
         _versions = context.modules.get_versions(context, _module.name)
-        
+
         for _version in _versions:
             output.msgln(_module.name, label=str(_version))
-        
-    
+
+
 def info(module_name, available_mods, args, context):
     _module = available_mods[module_name]
-    
+
     output.msgln(module_name + " (" + _module.version + ")", label=_module.status)
 
     pass
 
+
 class ModuleException(exceptions.ArmoryException):
     def __init__(self, msg):
         super(ModuleException, self).__init__(msg)
+
 
 class Module:
     MAX_SHORT_DESC_LENGTH = 50
@@ -110,7 +115,8 @@ class Module:
         self.friendly_name = self.name
         self.module_info_file = self.module_directory + self.name + '.info'
 
-        self.version = '~'
+        self.version = '0.0.0-None'
+        self.version_obj = Version(self.version)
         self.description = '<no description>'
         self.short_description = '<no description>'
         self.config = configparser.SafeConfigParser()
@@ -187,18 +193,18 @@ class Modules:
 
     def get(self, context, module_name, version):
         return Module(module_name, context.get_module_directory(module_name, version), context)
-        
+
     def get_versions(self, context, module_name):
         _dir = context.get_modules_directory()
         _dir += module_name + os.sep
-        
+
         _results = []
         for module_directory in os.listdir(_dir):
             if module_directory == 'latest':
                 continue
-                
+
             _results.append(Version(module_directory))
-            
+
         return sorted(_results)
 
     def from_context(self, context):

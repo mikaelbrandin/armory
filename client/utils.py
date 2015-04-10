@@ -4,6 +4,9 @@ import subprocess
 import hashlib
 import os
 
+from ar.semantic_version import Spec as VersionSpec
+from . import output
+
 
 def register_scheme(scheme):
     for method in [s for s in dir(urlparse) if s.startswith('uses_')]:
@@ -41,26 +44,31 @@ def build_modules(context, module_names=[], **kwargs):
     if len(module_names) > 0 and not (len(module_names) == 1 and module_names[0] == 'all'):
         return modules, module_names
 
-    if context.branch.has_section(context.environment):
+    if len(module_names) == 1 and module_names[0] == 'all':
+        return modules, list(modules.keys())
+
+    if context.branch.has_section("modules"):
         _included = []
-        _seen = []
-        for (key, value) in context.branch.items(context.environment):
-            val = str(value).lower().strip()
-            if val == 'true':
-                _included.append(key)
+        for (module_name, version) in context.branch.items(context.environment):
+            version = str(version).lower().strip()
 
-            _seen.append(key)
+            if version == 'latest':
+                _included.append(module_name)
 
-        for key in list(modules.keys()):
-
-            if key in _seen:
+            elif version == 'disable' or version == 'false' or version == '0' or version == '':
                 continue
             else:
-                _included.append(key)
+                spec = VersionSpec(version)
+                mod = modules[module_name]
+
+                if spec.match(mod.version_obj):
+                    _included.append(module_name)
+                else:
+                    output.msgln("Ignoring " + mod + +" " + str(spec) + " does not match " + mod.version)
 
         return modules, _included
-    else:
-        return modules, list(modules.keys())
+
+    return modules, []
 
 
 def confirm(msg):
