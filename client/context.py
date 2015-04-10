@@ -7,6 +7,7 @@ import os.path
 import configparser
 from . import modules as mods
 from . import configurations as confs
+from . import exceptions
 
 
 class ReadWriteDirectory(argparse.Action):
@@ -105,6 +106,8 @@ class Context:
         if os.path.exists(self.db_directory + 'HEAD'):
             _head = os.readlink(self.db_directory + 'HEAD')
             self.branch_name = os.path.basename(_head).split('.')[0]
+        elif _args.debug:
+            print ("Missing HEAD in " + self.db_directory + 'HEAD')
 
         self.branch_file = self.home_directory + self.branch_name + '.armory'
         self.branch.read(self.branch_file)
@@ -114,6 +117,10 @@ class Context:
                 self.env['ARMORY_' + key.upper()] = value
 
         self.env['ARMORY_HOME'] = self.home_directory
+
+        if _args.debug:
+            print("home=" + self.home_directory)
+            print("db=" + self.db_directory)
 
         _args.command(_args, self)
         return None
@@ -125,6 +132,10 @@ class Context:
         while not is_armory_repository_dir(_dir) and not _dir == _root:
             _dir = os.path.dirname(_dir)
 
+        if _dir == _root:
+            if not is_armory_repository_dir(_dir):
+                raise exceptions.ArmoryException(_dir + ' is not a armory directory')
+
         if not is_armory_repository_dir(directory):
             # FIXME: Should be changed to 'user' rather than 'profile'
             if self.user.has_option('profile', 'home') and is_armory_repository_dir(self.user.get('profile', 'home')):
@@ -134,6 +145,7 @@ class Context:
 
         if not _dir.endswith(os.sep):
             _dir += os.sep
+
         return _dir
 
     def check_directories(self):

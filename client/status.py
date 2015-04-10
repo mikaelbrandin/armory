@@ -24,7 +24,7 @@ def command_status(args, context):
         args.modules = list(modules.keys())
 
     print("-----")
-    print(" Environment: " + context.environment)
+    print("      Branch: " + context.branch_name)
     print("  Repository: " + context.home_directory)
     print("   Directory: " + args.directory)
     print("        User: " + context.user_directory)
