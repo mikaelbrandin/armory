@@ -36,6 +36,7 @@ def command_status(args, context):
     return None
 
 
+
 def fill_width(n):
     print('=' * n)
 

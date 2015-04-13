@@ -4,6 +4,7 @@ import sys
 class bcolors:
     BLUE = '\033[94m'
     GREEN = '\033[32m'
+    YELLOW = '\033[32m'
     LIGHT_RED = '\033[93m'
     RED = '\033[31m'
     END = '\033[0m'
@@ -18,7 +19,12 @@ def msg(text, **kwargs):
     out = ""
 
     if 'label' in kwargs:
-        out += "[" + bcolors.GREEN + kwargs.get('label') + bcolors.END + "] "
+        if 'error' in kwargs:
+            out += "[" + bcolors.RED + kwargs.get('label') + bcolors.END + "] "
+        elif 'warn' in kwargs:
+            out += "[" + bcolors.YELLOW + kwargs.get('label') + bcolors.END + "] "
+        else:
+            out += "[" + bcolors.GREEN + kwargs.get('label') + bcolors.END + "] "
 
     out += text
     sys.stdout.write(out)

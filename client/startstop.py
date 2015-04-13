@@ -8,6 +8,7 @@ import pwd
 from . import exceptions
 from . import utils
 from . import configurations
+from . import output;
 
 
 class StartException(exceptions.ArmoryException):
@@ -45,19 +46,21 @@ def command_start(args, context):
     for name in included:
         module = modules[name]
 
-        if module.run_as_user is not None:
-            pw = pwd.getpwnam(module.run_as_user)
-            override_uid = pw.pw_uid
-            override_gid = pw.pw_gid
-            try:
-                start(args, context, module, override_uid, override_gid)
-            except exceptions.ArmoryException as e:
-                e.print_message()
-        else:
-            try:
-                start(args, context, module, uid, gid)
-            except exceptions.ArmoryException as e:
-                e.print_message()
+        if len(module.dependencies) > 0:
+            # FIXME: Remove from included if started as dependency!
+            # Start any dependencies
+            for dep in module.dependencies:
+                dep_mod = modules[dep]
+                try:
+                    start(args, context, dep_mod, uid, gid)
+                except exceptions.ArmoryException as e:
+                    output.msgln(e.print_message(), label="error", error=1)
+
+        try:
+            # Start the actual service requested
+            start(args, context, module, uid, gid)
+        except exceptions.ArmoryException as e:
+            output.msgln(e.print_message(), label="error", error=1)
 
     return None
 
@@ -88,13 +91,18 @@ def demote(uid, gid):
 
 def start(args, context, module, uid, gid):
     pids = module.get_processes()
-    # TODO: Check that process id is active!
+    # FIXME: Check that process ID is active
 
     if len(pids) > 0:
         print(module.name + " [running]")
         return True
 
-    print("starting " + module.name)
+    output.msgln(module.name, label="ok")
+
+    if module.run_as_user is not None:
+        pw = pwd.getpwnam(module.run_as_user)
+        uid = pw.pw_uid
+        gid = pw.pw_gid
 
     env = os.environ.copy()
     env.update(context.env)

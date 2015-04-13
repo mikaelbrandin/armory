@@ -121,6 +121,7 @@ class Module:
         self.short_description = '<no description>'
         self.config = configparser.SafeConfigParser()
         self.status = "ok"
+        self.dependencies = []
 
         if not os.path.exists(self.module_info_file):
             self.status = 'error'
@@ -137,6 +138,10 @@ class Module:
 
             if self.config.has_option('user', 'group'):
                 self.run_as_group = self.config.get('user', 'group')
+
+            if self.config.has_section('dependencies'):
+                for key, value in self.config.items('dependencies'):
+                    self.dependencies.append(key)
 
             if self.config.has_option('general', 'description'):
                 self.description = self.config.get('general', 'description')
